@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PST30 Race Planner · Chiang Mai 2026</title>
+<meta name="description" content="วางแผนวิ่ง PST30 กับเพื่อน — 3D map, pacing, aid station ETA, gel plan">
+<meta property="og:title" content="PST30 Race Planner · วางแผนวิ่งกับเพื่อน">
+<meta property="og:description" content="32 km · +1,098 m · Chiang Mai · 14 Nov 2026">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%9B%B0%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<meta name="theme-color" content="#0b1210">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b1210;--bg2:#101a17;--card:#13201c;--card2:#182823;--line:#24392f;--txt:#e8efe9;--mut:#8fa69a;--dim:#5f7a6d;
+  --acc:#c6f36b;--acc2:#ffb547;--red:#ff5d5d;--blue:#5cc8ff;--ok:#5ee39a;--warn:#ffc24b;--bad:#ff5d5d;
+  --r:16px;--font:'IBM Plex Sans Thai',system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);-webkit-font-smoothing:antialiased}
+body{background:radial-gradient(1200px 600px at 80% -10%,#1d3b2b55,transparent 60%),radial-gradient(900px 500px at -10% 10%,#3b2a1355,transparent 60%),var(--bg)}
+a{color:var(--acc)}
+button,input,select{font-family:inherit;font-size:14px;color:var(--txt)}
+.wrap{max-width:1480px;margin:0 auto;padding:16px}
+/* hero */
+.hero{position:relative;overflow:hidden;border-radius:24px;padding:22px 24px;background:linear-gradient(135deg,#132a20 0%,#0f1915 55%,#2a1d0d 100%);border:1px solid var(--line)}
+.hero svg.ridge{position:absolute;inset:auto 0 0 0;width:100%;height:120px;opacity:.35}
+.hero .top{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;position:relative}
+.brand{font-family:'Bebas Neue',var(--font);font-size:64px;line-height:.9;letter-spacing:1px;margin:0}
+.brand span{color:var(--acc)}
+.sub{color:var(--mut);margin-top:6px;font-size:15px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;position:relative}
+.chip{background:#0b1411aa;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;backdrop-filter:blur(6px)}
+.chip b{font-family:var(--mono);color:var(--acc);font-weight:600}
+.count{text-align:right}
+.count .lbl{color:var(--mut);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.count .num{font-family:var(--mono);font-size:28px;font-weight:600;color:var(--acc2)}
+/* layout */
+.grid{display:grid;grid-template-columns:380px 1fr;gap:16px;margin-top:16px}
+@media(max-width:1020px){.grid{grid-template-columns:1fr}.side{order:2}.main{order:1}}
+.card{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.card h2{margin:0 0 10px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;letter-spacing:.02em}
+.card h2 .en{color:var(--dim);font-weight:400;font-size:12px}
+.side{display:flex;flex-direction:column;gap:16px}
+.main{display:flex;flex-direction:column;gap:16px;min-width:0}
+/* map */
+.mapbox{position:relative;height:min(62vh,640px);min-height:380px;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:#0a100e}
+#map{position:absolute;inset:0}
+.maptools{position:absolute;top:10px;left:10px;display:flex;gap:6px;flex-wrap:wrap;z-index:3;max-width:calc(100% - 60px)}
+.seg{display:flex;background:#0b1411d9;border:1px solid var(--line);border-radius:12px;padding:3px;backdrop-filter:blur(8px)}
+.seg button{background:none;border:0;padding:6px 10px;border-radius:9px;cursor:pointer;color:var(--mut);font-size:12.5px;white-space:nowrap}
+.seg button.on{background:var(--acc);color:#0b1210;font-weight:600}
+.legend{position:absolute;right:10px;bottom:10px;z-index:3;background:#0b1411d9;border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:11px;color:var(--mut);backdrop-filter:blur(8px)}
+.legend .bar{display:flex;height:8px;border-radius:4px;overflow:hidden;margin:4px 0 2px;width:180px}
+.legend .bar i{flex:1}
+.legend .ticks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px}
+.clockhud{position:absolute;left:10px;bottom:10px;z-index:3;background:#0b1411d9;border:1px solid var(--line);border-radius:12px;padding:8px 12px;backdrop-filter:blur(8px)}
+.clockhud .t{font-family:var(--mono);font-size:26px;font-weight:600;color:var(--acc);line-height:1}
+.clockhud .s{font-size:11px;color:var(--mut)}
+.nogl{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:30px;color:var(--mut)}
+/* player */
+.player{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.btn{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:9px 14px;cursor:pointer;transition:transform .15s,background .2s,border-color .2s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--acc);transform:translateY(-1px)}
+.btn:active{transform:scale(.97)}
+.btn.pri{background:var(--acc);color:#0b1210;border-color:var(--acc);font-weight:600}
+.btn.sm{padding:6px 10px;font-size:12.5px;border-radius:10px}
+.play{width:46px;height:46px;border-radius:50%;justify-content:center;padding:0;font-size:18px}
+input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;width:100%;height:24px}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--acc) var(--p,0%),#2a3d34 var(--p,0%))}
+input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:#2a3d34}
+input[type=range]::-moz-range-progress{height:6px;border-radius:3px;background:var(--acc)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;margin-top:-6px;box-shadow:0 0 0 4px #c6f36b44;cursor:pointer}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:0;box-shadow:0 0 0 4px #c6f36b44}
+.scrub{flex:1;min-width:180px}
+.speed select,select,input[type=text],input[type=number],input[type=time]{background:#0d1714;border:1px solid var(--line);border-radius:10px;padding:7px 9px;outline:none}
+select:focus,input:focus{border-color:var(--acc)}
+/* profile */
+.profile{position:relative;height:220px}
+.profile canvas{width:100%;height:100%;display:block;cursor:crosshair}
+.tip{position:absolute;pointer-events:none;background:#08100dEE;border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:12px;min-width:160px;transform:translate(-50%,-100%);opacity:0;transition:opacity .15s;z-index:4;white-space:nowrap}
+.tip .k{font-family:var(--mono);color:var(--acc);font-weight:600}
+.tip .row{display:flex;justify-content:space-between;gap:10px}
+.tip .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+/* runners */
+.runner{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;background:#0e1815;position:relative;overflow:hidden}
+.runner::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
+.runner .r1{display:flex;gap:8px;align-items:center}
+.runner .r1 input[type=text]{flex:1;min-width:0;font-weight:600}
+.runner input[type=color]{width:34px;height:34px;border:0;background:none;padding:0;cursor:pointer}
+.runner .r2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
+.runner label{font-size:11px;color:var(--mut);display:flex;flex-direction:column;gap:4px}
+.runner label>*{width:100%}
+.runner .res{display:flex;gap:12px;margin-top:10px;font-size:12px;color:var(--mut);flex-wrap:wrap}
+.runner .res b{font-family:var(--mono);color:var(--txt);font-weight:600}
+.x{background:none;border:0;color:var(--dim);cursor:pointer;font-size:18px;padding:4px}
+.x:hover{color:var(--red)}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.field .lab{display:flex;justify-content:space-between;font-size:12.5px;color:var(--mut)}
+.field .lab b{font-family:var(--mono);color:var(--acc);font-weight:500}
+.hint{font-size:11.5px;color:var(--dim);line-height:1.5}
+.stations .st{display:grid;grid-template-columns:62px 1fr 1fr;gap:6px;align-items:center;margin-bottom:6px;font-size:13px}
+.stations .st b{font-family:var(--mono)}
+.stations input{width:100%}
+/* tabs */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:-4px -4px 12px;padding:0 4px;overflow-x:auto}
+.tabs button{background:none;border:0;padding:10px 12px;color:var(--mut);cursor:pointer;position:relative;white-space:nowrap}
+.tabs button.on{color:var(--txt)}
+.tabs button.on::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;background:var(--acc);border-radius:2px}
+.pane{display:none}.pane.on{display:block;animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-weight:500;color:var(--mut);text-align:left;padding:8px;border-bottom:1px solid var(--line);font-size:12px;white-space:nowrap}
+td{padding:8px;border-bottom:1px solid #1b2b25;white-space:nowrap}
+td.n,th.n{text-align:right;font-family:var(--mono)}
+tr:hover td{background:#16241f}
+.tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600;font-family:var(--mono)}
+.b-ok{background:#5ee39a22;color:var(--ok)}.b-warn{background:#ffc24b22;color:var(--warn)}.b-bad{background:#ff5d5d22;color:var(--bad)}.b-dead{background:var(--bad);color:#200}
+.stcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:14px}
+.stc{border:1px solid var(--line);border-radius:14px;padding:12px;background:#0e1815}
+.stc .h{display:flex;justify-content:space-between;align-items:baseline}
+.stc .h b{font-family:'Bebas Neue';font-size:26px;letter-spacing:1px}
+.stc .h span{font-family:var(--mono);font-size:12px;color:var(--mut)}
+.stc .co{font-size:12px;color:var(--mut);margin:2px 0 8px}
+.stc .co b{color:var(--red);font-family:var(--mono)}
+.stc .rr{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;padding:3px 0}
+.stc .rr .nm{display:flex;align-items:center;gap:6px;overflow:hidden;text-overflow:ellipsis}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none}
+.gelrow{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.geltrack{position:relative;height:46px;flex:1;background:#0d1714;border:1px solid var(--line);border-radius:12px}
+.geltrack .gel{position:absolute;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 2px 10px #0008;transition:transform .2s}
+.geltrack .gel:hover{transform:scale(1.25)}
+.geltrack .stmark{position:absolute;top:0;bottom:0;border-left:1px dashed #ffffff33;font-size:9.5px;color:var(--dim);padding-left:3px;font-family:var(--mono)}
+.gelname{width:90px;font-size:13px;display:flex;gap:6px;align-items:center}
+.note{background:#ffb54712;border:1px solid #ffb54744;color:#ffd99b;border-radius:12px;padding:10px 12px;font-size:12.5px;line-height:1.6}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+footer{color:var(--dim);font-size:12px;text-align:center;padding:24px 10px 40px;line-height:1.7}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);opacity:0;background:var(--acc);color:#0b1210;padding:10px 16px;border-radius:12px;font-weight:600;transition:all .3s;z-index:99}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.live .row1{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.live input[type=url]{flex:1;min-width:220px;background:#0d1714;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-family:var(--mono);font-size:12.5px;color:var(--txt)}
+.lstat{font-size:12px;color:var(--mut);display:flex;align-items:center;gap:6px;margin-top:8px}
+.ldot{width:9px;height:9px;border-radius:50%;background:#5f7a6d}
+.ldot.on{background:#ff4d4d;box-shadow:0 0 0 0 #ff4d4d;animation:lp 1.4s infinite}
+.ldot.err{background:var(--warn)}
+@keyframes lp{0%{box-shadow:0 0 0 0 #ff4d4daa}80%{box-shadow:0 0 0 10px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.lrows{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:12px}
+.lr{border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:#0e1815;font-size:12.5px;position:relative}
+.lr .nm{display:flex;align-items:center;gap:6px;font-weight:600;font-size:14px}
+.lr .meta{color:var(--mut);margin-top:4px;line-height:1.6}
+.lr .meta b{font-family:var(--mono);color:var(--txt);font-weight:500}
+.lr .km{position:absolute;right:12px;top:10px;font-family:'Bebas Neue';font-size:24px;color:var(--acc)}
+.livemk{width:30px;height:30px;border-radius:50%;border:3px dashed #fff;background:var(--c);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#0b1210;box-shadow:0 0 18px var(--c)}
+.livemk::after{content:"LIVE";position:absolute;top:-16px;left:50%;transform:translateX(-50%);background:#ff4d4d;color:#fff;font-size:8.5px;padding:1px 4px;border-radius:4px;letter-spacing:.05em}
+/* markers */
+.rm{width:26px;height:26px;border-radius:50%;border:2.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#0b1210;box-shadow:0 0 0 0 var(--c);animation:pulse 1.8s infinite;background:var(--c)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--c) 70%,transparent)}70%{box-shadow:0 0 0 14px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.sm-st{background:#0b1411ee;border:1.5px solid var(--acc2);color:var(--txt);border-radius:10px;padding:4px 8px;font-size:11.5px;white-space:nowrap;box-shadow:0 4px 14px #0009;cursor:pointer}
+.sm-st b{color:var(--acc2);font-family:'Bebas Neue';font-size:16px;letter-spacing:.5px;margin-right:4px}
+.sm-st.sf{border-color:var(--acc)}.sm-st.sf b{color:var(--acc)}
+.hm{width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid var(--acc);box-shadow:0 0 12px var(--acc)}
+.fly{width:18px;height:18px;border-radius:50%;background:var(--acc);border:3px solid #fff;box-shadow:0 0 18px var(--acc)}
+.maplibregl-ctrl-group{background:#0b1411d9!important;border:1px solid var(--line)}
+.maplibregl-ctrl-group button span{filter:invert(1)}
+.maplibregl-ctrl-attrib{background:#0b1411aa!important;color:var(--dim)!important;font-size:10px}
+.maplibregl-ctrl-attrib a{color:var(--mut)!important}
+.reveal{opacity:0;transform:translateY(14px)}
+.noanim .reveal{opacity:1;transform:none}
+@media(max-width:640px){
+  .wrap{padding:10px}.brand{font-size:46px}.hero{padding:16px}.count{text-align:left}
+  .mapbox{height:56vh;min-height:320px}.profile{height:180px}
+  .legend{display:none}.clockhud .t{font-size:20px}
+  .runner .r2{grid-template-columns:1fr 1fr}
+  .gelname{width:64px}
+}
+@media print{
+  body{background:#fff;color:#000}.mapbox,.player,.side,.tabs,.toolbar,.hero svg,.profile,.maptools{display:none!important}
+  .grid{display:block}.card{border:0;background:none}.pane{display:block!important}td,th{color:#000;border-color:#ccc}
+  .hero{background:none;border:0;color:#000}.stc{border-color:#ccc;background:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero reveal">
+    <svg class="ridge" viewBox="0 0 1000 120" preserveAspectRatio="none" id="ridge"></svg>
+    <div class="top">
+      <div>
+        <h1 class="brand">PST<span>30</span> RACE PLANNER</h1>
+        <div class="sub">Pocari Sweat Trail Run Thailand · เชียงใหม่ · เสาร์ 14 พ.ย. 2026 · วางแผนวิ่งกับเพื่อน 🏃‍♂️🏃‍♀️</div>
+      </div>
+      <div class="count"><div class="lbl">ปล่อยตัว Wave 1 ในอีก</div><div class="num" id="countdown">—</div></div>
+    </div>
+    <div class="chips">
+      <div class="chip">ระยะ <b>32.0 km</b></div>
+      <div class="chip">ไต่สะสม <b>+1,098 m</b> <span style="color:var(--dim)">(official)</span></div>
+      <div class="chip">Waves <b>07:00 · 07:15 · 07:30</b></div>
+      <div class="chip">Cutoff เส้นชัย <b>17:00</b></div>
+      <div class="chip">จุดสูงสุด <b id="maxEle">—</b></div>
+      <div class="chip">Aid <b>A8 → W2 → A8</b></div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <aside class="side">
+      <section class="card reveal">
+        <h2>👥 ทีมวิ่ง <span class="en">Runners</span></h2>
+        <div id="runners"></div>
+        <div class="toolbar"><button class="btn sm pri" id="addR">＋ เพิ่มเพื่อน</button><button class="btn sm" id="resetR">รีเซ็ต</button></div>
+        <p class="hint" style="margin-top:10px">เลือก <b>Goal</b> = เวลาเข้าเส้นชัยเป้าหมาย (h:mm) หรือ <b>Flat pace</b> = เพซทางราบที่วิ่งได้ (m:ss/km) แล้วระบบจะปรับเพซตามความชันให้</p>
+      </section>
+      <section class="card reveal">
+        <h2>⚙️ โมเดลเพซ <span class="en">Grade-adjusted pacing</span></h2>
+        <div class="field"><div class="lab">ขาขึ้น (climb cost) <b id="v-climb"></b></div><input type="range" id="climb" min="0.6" max="1.5" step="0.05"></div>
+        <div class="field"><div class="lab">ทักษะลงเขา (descent skill) <b id="v-desc"></b></div><input type="range" id="desc" min="0.5" max="1.6" step="0.05"></div>
+        <div class="field"><div class="lab">ความล้าสะสม (fatigue, ช้าลงตอนท้าย) <b id="v-fat"></b></div><input type="range" id="fat" min="0" max="0.3" step="0.01"></div>
+        <div class="field"><div class="lab">แวะ Aid ต่อจุด (นาที) <b id="v-stop"></b></div><input type="range" id="stop" min="0" max="10" step="0.5"></div>
+        <div class="field"><div class="lab">กินเจลทุก (นาที) <b id="v-gel"></b></div><input type="range" id="gel" min="20" max="60" step="5"></div>
+        <div class="field"><div class="lab">Buffer เตือนก่อน cutoff (นาที) <b id="v-buf"></b></div><input type="range" id="buf" min="10" max="90" step="5"></div>
+        <p class="hint">Uphill ใช้ energy-cost curve ของ Minetti (2002) · downhill เร็วขึ้นเล็กน้อยถึง ~8% แล้วช้าลงเมื่อชันมาก (ทางลงเทคนิค) · fatigue ทำให้ช้าลงเป็นเส้นตรงตามระยะ</p>
+      </section>
+      <section class="card reveal stations">
+        <h2>📍 จุด Aid &amp; Cutoff <span class="en">editable</span></h2>
+        <div id="stEdit"></div>
+        <p class="hint">ค่าเริ่มต้น: กม. จาก waypoint ใน GPX ทางการ (2026-PST30-V1) ตรงกับตาราง Aid ของผู้จัด (7.3 / 17.7 / 23.7 km) · cutoff จากตารางผู้จัด · W2 ไม่มีจุด support ส่วนตัว</p>
+      </section>
+    </aside>
+
+    <main class="main">
+      <section class="mapbox reveal">
+        <div id="map"></div>
+        <div class="nogl" id="nogl">ไม่สามารถเปิดแผนที่ 3D ได้บนเครื่องนี้ (WebGL) — ใช้กราฟความสูงด้านล่างแทนได้</div>
+        <div class="maptools">
+          <div class="seg" id="camSeg"><button data-c="overview" class="on">ภาพรวม</button><button data-c="follow">ติดตาม</button><button data-c="fly">✈ Flythrough</button></div>
+          <div class="seg" id="baseSeg"><button data-b="sat" class="on">ดาวเทียม</button><button data-b="topo">Topo</button></div>
+        </div>
+        <div class="clockhud"><div class="t" id="hudT">07:00</div><div class="s" id="hudS">sim clock · 14 Nov</div></div>
+        <div class="legend"><div>ความชัน (grade)</div><div class="bar" id="lgBar"></div><div class="ticks"><span>-20%</span><span>0</span><span>+10</span><span>+20%</span></div></div>
+      </section>
+
+      <section class="card reveal">
+        <div class="player">
+          <button class="btn pri play" id="playBtn" aria-label="play">▶</button>
+          <div class="scrub"><input type="range" id="scrub" min="0" max="1000" value="0"></div>
+          <label class="speed"><select id="speed"><option value="60">60×</option><option value="180">180×</option><option value="360" selected>360×</option><option value="900">900×</option><option value="1800">1800×</option></select></label>
+          <select id="followSel" title="ติดตามใคร"></select>
+        </div>
+        <div class="profile" id="prof"><canvas id="pc"></canvas><div class="tip" id="tip"></div></div>
+      </section>
+
+
+      <section class="card reveal live" id="liveCard">
+        <h2>📡 Live วันแข่ง <span class="en">LINE check-ins · polls every 30 s</span></h2>
+        <div class="row1">
+          <input type="url" id="apiUrl" placeholder="API base URL เช่น https://pst30-line-bot.xxx.workers.dev" spellcheck="false">
+          <button class="btn sm pri" id="liveBtn">เริ่ม Live</button>
+          <button class="btn sm" id="demoBtn" title="ข้อมูลจำลองเพื่อดูหน้าตา">ทดลอง (demo)</button>
+        </div>
+        <div class="lstat"><span class="ldot" id="ldot"></span><span id="lmsg">ยังไม่ได้เชื่อมต่อ — ใส่ URL ของ LINE bot แล้วกด เริ่ม Live (ใช้ /api/checkins)</span></div>
+        <div class="lrows" id="lrows"></div>
+      </section>
+      <section class="card reveal">
+        <div class="tabs" id="tabs">
+          <button data-t="aid" class="on">⏱ Aid ETA vs Cutoff</button>
+          <button data-t="split">📊 Splits</button>
+          <button data-t="gel">🍯 เจล / น้ำ</button>
+          <button data-t="group">🤝 เทียบกลุ่ม</button>
+        </div>
+        <div class="pane on" id="p-aid"></div>
+        <div class="pane" id="p-split"></div>
+        <div class="pane" id="p-gel"></div>
+        <div class="pane" id="p-group"></div>
+        <div class="toolbar" style="margin-top:14px">
+          <button class="btn sm pri" id="shareBtn">🔗 คัดลอกลิงก์แชร์</button>
+          <button class="btn sm" id="saveBtn">💾 บันทึกในเครื่อง</button>
+          <button class="btn sm" id="csvBtn">⬇ CSV</button>
+          <button class="btn sm" id="printBtn">🖨 พิมพ์</button>
+        </div>
+      </section>
+    </main>
+  </div>
+  <footer>
+    ⚠️ ตัวเลขทั้งหมดเป็นการประมาณจากโมเดล ไม่ใช่คำแนะนำทางการแพทย์ · Estimates only — not medical advice. ฟังร่างกาย ดูอากาศวันแข่ง และทำตามกติกาผู้จัด<br>
+    Route: official GPX 2026-PST30-V1 (resampled 25 m, smoothed elevation ≈ +1,074 m) · Terrain: AWS Terrain Tiles (Mapzen/Terrarium) · Imagery: Esri World Imagery · Topo: OpenTopoMap · Map: MapLibre GL JS
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>window.ROUTE={"lat":[18.82631,18.82625,18.82633,18.82653,18.82673,18.82694,18.82715,18.82735,18.82756,18.82775,18.82796,18.82815,18.82836,18.82857,18.82878,18.82898,18.82919,18.8294,18.82961,18.82981,18.83002,18.83021,18.83042,18.83063,18.83081,18.83094,18.83096,18.83105,18.83114,18.83121,18.83126,18.8313,18.83136,18.83144,18.83149,18.83159,18.83165,18.83172,18.83179,18.83185,18.83193,18.832,18.83207,18.83213,18.83218,18.83239,18.8326,18.83281,18.83301,18.83322,18.83343,18.83352,18.83357,18.83361,18.83363,18.83369,18.83374,18.8338,18.83385,18.83388,18.83395,18.83401,18.83408,18.83411,18.83416,18.8342,18.83425,18.8343,18.83433,18.8344,18.83446,18.83449,18.83467,18.83489,18.83498,18.83504,18.83502,18.83516,18.83536,18.83558,18.8358,18.836,18.8362,18.83641,18.83663,18.83684,18.83689,18.83694,18.83701,18.83705,18.83708,18.83728,18.83747,18.83764,18.83781,18.83798,18.83817,18.83835,18.83852,18.8387,18.83888,18.83906,18.83924,18.8394,18.83957,18.83974,18.83992,18.84009,18.84027,18.84046,18.84063,18.8408,18.84097,18.84115,18.84133,18.8415,18.84168,18.8419,18.84206,18.84218,18.84227,18.84236,18.84245,18.84261,18.84275,18.84286,18.84304,18.84311,18.84312,18.8433,18.84351,18.84369,18.84383,18.84378,18.84364,18.84349,18.84328,18.84312,18.84299,18.84293,18.84313,18.84333,18.84342,18.84343,18.84358,18.84378,18.84399,18.84419,18.84437,18.84455,18.84473,18.84487,18.84486,18.84475,18.84486,18.84496,18.84502,18.84506,18.8451,18.84516,18.84518,18.84524,18.84523,18.84531,18.84538,18.84544,18.84564,18.8457,18.84564,18.84569,18.84577,18.84575,18.84575,18.84573,18.84577,18.84587,18.84607,18.84628,18.84648,18.84668,18.84686,18.84708,18.84729,18.84751,18.84772,18.84793,18.84809,18.84825,18.84847,18.84867,18.84889,18.84911,18.8493,18.8495,18.84969,18.84988,18.85008,18.85029,18.85046,18.85063,18.85082,18.85101,18.85122,18.85144,18.85162,18.85182,18.85198,18.85218,18.8524,18.85261,18.85281,18.853,18.85321,18.85341,18.85363,18.85384,18.85404,18.85424,18.85443,18.85462,18.85483,18.85505,18.85526,18.85547,18.85565,18.85574,18.85579,18.85598,18.85621,18.85642,18.85665,18.85686,18.85707,18.8573,18.85751,18.85769,18.85786,18.85796,18.85792,18.85795,18.85802,18.85818,18.85837,18.85854,18.85866,18.85876,18.85895,18.85908,18.85918,18.85928,18.85941,18.85957,18.85973,18.8599,18.86004,18.86015,18.86032,18.8605,18.86066,18.86081,18.86094,18.8611,18.86122,18.86129,18.86126,18.86125,18.86136,18.86139,18.86128,18.86142,18.86157,18.86175,18.86197,18.86218,18.8624,18.86262,18.86283,18.86296,18.86307,18.86318,18.86322,18.86322,18.86326,18.86337,18.86354,18.86376,18.86397,18.86418,18.8644,18.86455,18.86473,18.86492,18.8651,18.86531,18.86547,18.86559,18.8655,18.86566,18.86574,18.86571,18.86583,18.86595,18.86597,18.86602,18.86612,18.86621,18.86635,18.86653,18.86667,18.86683,18.86695,18.86709,18.86726,18.86748,18.8677,18.8679,18.86809,18.86825,18.86834,18.86833,18.86825,18.8683,18.86852,18.86875,18.86893,18.86895,18.869,18.86896,18.86895,18.86897,18.86897,18.86903,18.86925,18.86947,18.86967,18.86984,18.86994,18.87008,18.87009,18.87026,18.87032,18.87035,18.87043,18.87053,18.87061,18.8708,18.87095,18.87112,18.8713,18.87148,18.87162,18.87166,18.87161,18.87157,18.8715,18.87145,18.87142,18.87139,18.87124,18.87106,18.8709,18.87087,18.87079,18.8708,18.87072,18.87063,18.8705,18.87034,18.87028,18.87028,18.87033,18.87051,18.87069,18.87076,18.87081,18.87084,18.87078,18.87081,18.87084,18.87084,18.87093,18.87102,18.87117,18.87132,18.87139,18.87138,18.87128,18.87114,18.87101,18.87094,18.871,18.87115,18.87127,18.87137,18.87129,18.87115,18.87105,18.87091,18.87074,18.87061,18.8705,18.87041,18.87038,18.87048,18.87061,18.87082,18.87103,18.87121,18.87128,18.87136,18.87143,18.87134,18.87125,18.87112,18.87106,18.871,18.87082,18.87063,18.87058,18.87076,18.87091,18.87109,18.87123,18.87132,18.87142,18.87153,18.87164,18.87174,18.87185,18.87199,18.87219,18.87241,18.8726,18.87279,18.873,18.87317,18.87332,18.87345,18.8736,18.87377,18.87392,18.87403,18.8741,18.87412,18.87405,18.8739,18.87376,18.87365,18.87358,18.87349,18.87332,18.87311,18.87289,18.87268,18.87246,18.87236,18.87242,18.87255,18.87268,18.87287,18.87293,18.87281,18.87262,18.87246,18.87232,18.87234,18.87255,18.87265,18.87262,18.87265,18.87279,18.87295,18.87313,18.87332,18.87346,18.87358,18.87368,18.87372,18.87374,18.87366,18.87362,18.87357,18.87345,18.87332,18.87314,18.87293,18.87272,18.87278,18.87282,18.87271,18.87265,18.87266,18.8727,18.87272,18.87278,18.87283,18.87284,18.87285,18.873,18.87316,18.87326,18.87342,18.87335,18.87319,18.87311,18.87316,18.8733,18.87342,18.87352,18.87353,18.87357,18.87376,18.87399,18.87412,18.87421,18.87425,18.87428,18.87431,18.87427,18.87406,18.87392,18.87387,18.8737,18.8736,18.87361,18.87373,18.8739,18.87409,18.8741,18.874,18.87381,18.87361,18.87364,18.87371,18.87382,18.87398,18.87418,18.87425,18.87439,18.87455,18.87474,18.87496,18.87515,18.87533,18.87551,18.87563,18.87544,18.87526,18.87528,18.87547,18.87569,18.87591,18.87613,18.87632,18.87651,18.87667,18.87678,18.87684,18.87704,18.87724,18.87745,18.87765,18.87781,18.87798,18.87816,18.87818,18.87836,18.87857,18.87876,18.87898,18.87918,18.87932,18.87945,18.87957,18.87968,18.87975,18.87987,18.87999,18.88016,18.88023,18.88018,18.88016,18.88016,18.88009,18.87995,18.87986,18.87984,18.87992,18.88011,18.88032,18.88052,18.88072,18.88092,18.8811,18.88128,18.8815,18.88171,18.88192,18.88212,18.88229,18.88226,18.88221,18.88207,18.88205,18.88204,18.88217,18.88231,18.88244,18.88261,18.88279,18.88298,18.88319,18.88341,18.88363,18.88384,18.88406,18.88428,18.88436,18.8842,18.88431,18.88447,18.88458,18.88466,18.88485,18.88506,18.88528,18.88545,18.88561,18.88582,18.88603,18.88623,18.88638,18.88651,18.88662,18.88674,18.88689,18.88704,18.88715,18.88718,18.88724,18.88729,18.88731,18.88735,18.88747,18.88764,18.88786,18.88806,18.88823,18.8884,18.8886,18.88877,18.88897,18.88914,18.88935,18.88954,18.88969,18.88991,18.89011,18.89029,18.8905,18.89067,18.89078,18.89088,18.89105,18.89124,18.89139,18.89156,18.89168,18.89175,18.89178,18.89186,18.8919,18.89197,18.89208,18.8921,18.8921,18.89199,18.89184,18.89171,18.89154,18.89138,18.89124,18.8911,18.89095,18.89078,18.89071,18.89071,18.89064,18.89062,18.89059,18.89059,18.89066,18.89074,18.89075,18.8908,18.89073,18.89062,18.89053,18.89059,18.89072,18.89091,18.89111,18.89127,18.89146,18.89157,18.89166,18.89169,18.89164,18.89154,18.89153,18.89164,18.89181,18.89198,18.8922,18.89235,18.89255,18.89273,18.89292,18.89308,18.8933,18.89352,18.89374,18.89395,18.89416,18.89437,18.89447,18.89427,18.89409,18.894,18.8939,18.8939,18.89402,18.89412,18.89409,18.89391,18.89369,18.89348,18.89327,18.89305,18.89284,18.89263,18.89242,18.8922,18.89199,18.89177,18.89155,18.89134,18.89114,18.89109,18.89095,18.89085,18.89063,18.89042,18.89023,18.8901,18.88991,18.88973,18.88959,18.88943,18.88921,18.88899,18.88877,18.88863,18.88841,18.88819,18.88799,18.8878,18.88762,18.88747,18.88732,18.88717,18.887,18.88689,18.88678,18.88662,18.88642,18.88625,18.88609,18.8859,18.8857,18.88553,18.88534,18.88516,18.88498,18.88486,18.88472,18.88455,18.88444,18.88437,18.88432,18.88426,18.88414,18.88399,18.88379,18.88365,18.88344,18.8833,18.88324,18.88317,18.88311,18.88292,18.88272,18.88256,18.88237,18.88219,18.88204,18.88199,18.88184,18.88172,18.88155,18.88137,18.88118,18.88101,18.88094,18.88078,18.88065,18.88049,18.88031,18.88015,18.87994,18.87974,18.87954,18.87932,18.87918,18.87902,18.87886,18.87865,18.87844,18.87822,18.87801,18.87784,18.87766,18.87753,18.87741,18.87724,18.87705,18.87693,18.87688,18.87681,18.87672,18.87654,18.87645,18.87638,18.87617,18.87597,18.87599,18.87607,18.87613,18.87631,18.87626,18.8761,18.87599,18.87585,18.87564,18.87547,18.87526,18.87506,18.87487,18.87473,18.87456,18.87438,18.87418,18.87408,18.87414,18.87405,18.87397,18.87376,18.87356,18.87337,18.87318,18.87302,18.87286,18.87267,18.87245,18.87228,18.87228,18.87232,18.87246,18.87258,18.87269,18.87249,18.87227,18.87205,18.87187,18.87176,18.87164,18.87158,18.87166,18.87174,18.87167,18.8715,18.87128,18.87111,18.87093,18.87075,18.87066,18.87059,18.87055,18.87057,18.87059,18.87075,18.87095,18.87109,18.87116,18.87121,18.87119,18.8712,18.87111,18.8709,18.87074,18.87053,18.87041,18.87051,18.87059,18.87052,18.87036,18.87014,18.86992,18.8697,18.8695,18.86937,18.86929,18.86915,18.86896,18.86878,18.86856,18.86834,18.86824,18.86832,18.86832,18.86825,18.8681,18.8679,18.8677,18.86748,18.86726,18.86709,18.86695,18.86683,18.86668,18.86653,18.86636,18.8662,18.8661,18.86601,18.86599,18.86594,18.86582,18.8657,18.86573,18.86565,18.86555,18.86556,18.8654,18.86523,18.86504,18.86485,18.86465,18.86449,18.8643,18.8641,18.86389,18.86369,18.86347,18.86333,18.86323,18.86321,18.8632,18.86314,18.86303,18.8629,18.86273,18.86252,18.86231,18.8621,18.86188,18.86167,18.8615,18.86135,18.8613,18.86141,18.86129,18.86124,18.86126,18.86125,18.86116,18.86102,18.86086,18.86073,18.86059,18.86042,18.86025,18.86011,18.85998,18.85981,18.85964,18.85947,18.85934,18.85923,18.85914,18.85901,18.85884,18.8587,18.85859,18.85844,18.85825,18.85808,18.85796,18.85791,18.85793,18.85793,18.85777,18.85759,18.8574,18.85718,18.85696,18.85675,18.85653,18.8563,18.85608,18.85587,18.85576,18.8557,18.85556,18.85537,18.85515,18.85493,18.85471,18.85453,18.85432,18.85413,18.85392,18.8537,18.85348,18.85328,18.85307,18.85288,18.85269,18.85249,18.85227,18.85206,18.8519,18.85195,18.85196,18.85192,18.8519,18.85184,18.8518,18.85177,18.85177,18.85174,18.85174,18.85159,18.8515,18.85142,18.85132,18.85116,18.85106,18.85095,18.85095,18.85093,18.85092,18.85101,18.85098,18.85093,18.85087,18.85074,18.85059,18.85048,18.85034,18.85019,18.85002,18.84987,18.84971,18.84958,18.84942,18.84929,18.84919,18.84913,18.84901,18.84885,18.84869,18.84859,18.84842,18.84828,18.84809,18.84793,18.84776,18.84757,18.8474,18.84724,18.8471,18.84697,18.84683,18.84662,18.84643,18.84634,18.84619,18.84602,18.84593,18.84574,18.84556,18.84534,18.84512,18.84493,18.84475,18.84456,18.84435,18.84413,18.84394,18.84372,18.84353,18.84334,18.84314,18.84299,18.84283,18.84264,18.84246,18.84242,18.84242,18.84241,18.84239,18.84238,18.84232,18.84218,18.84203,18.84188,18.84169,18.8415,18.84132,18.84111,18.84091,18.84071,18.84058,18.84045,18.84033,18.84015,18.83998,18.83985,18.83985,18.83972,18.8396,18.83947,18.8393,18.83911,18.839,18.83891,18.83879,18.83872,18.83857,18.8385,18.83832,18.83816,18.83809,18.83805,18.83789,18.83774,18.83758,18.83739,18.83723,18.83706,18.83697,18.83686,18.83671,18.83656,18.83639,18.83622,18.836,18.83579,18.83558,18.83541,18.83524,18.83506,18.83486,18.83464,18.83443,18.83422,18.83402,18.83382,18.83366,18.83355,18.83338,18.83322,18.83303,18.83282,18.83261,18.83239,18.83224,18.83216,18.83212,18.83201,18.83188,18.83182,18.83172,18.83162,18.83148,18.83133,18.83111,18.83089,18.8307,18.83048,18.83027,18.83022,18.83011,18.82997,18.82983,18.82963,18.82941,18.82924,18.82922,18.82925,18.82943,18.82964,18.82985,18.83002,18.83015,18.83024,18.83033,18.83039,18.83044,18.83046,18.8305,18.83054,18.83056,18.83061,18.83063,18.83064,18.83079,18.83101,18.83123,18.83145,18.83168,18.83181,18.83177,18.83172,18.83169,18.83169,18.83188,18.83211,18.83214,18.83207,18.83203,18.83197,18.83189,18.83182,18.83174,18.83167,18.83161,18.83155,18.83149,18.83139,18.83132,18.83126,18.83121,18.83113,18.83106,18.83101,18.83095,18.83091,18.83072,18.83051,18.83031,18.8301,18.8299,18.82969,18.82948,18.82928,18.82907,18.82887,18.82868,18.82847,18.82826,18.82805,18.82785,18.82764,18.82744,18.82723,18.82703,18.82683,18.82663,18.82643,18.82623,18.82627,18.82631],"lon":[98.96094,98.96116,98.96128,98.96135,98.96143,98.96149,98.96157,98.96165,98.96169,98.96177,98.96182,98.9619,98.96197,98.96204,98.96209,98.96218,98.96225,98.9623,98.96236,98.96245,98.9625,98.96259,98.96265,98.96272,98.96283,98.96269,98.96247,98.96226,98.96205,98.96183,98.96161,98.96139,98.96117,98.96096,98.96074,98.96053,98.96031,98.9601,98.95988,98.95966,98.95944,98.95923,98.95901,98.95879,98.95858,98.95861,98.95866,98.95871,98.95875,98.95882,98.95887,98.95872,98.9585,98.95829,98.95806,98.95785,98.95763,98.95743,98.95721,98.95699,98.95678,98.95656,98.95634,98.95612,98.9559,98.95567,98.95546,98.95524,98.95501,98.9548,98.95458,98.95436,98.95439,98.95438,98.95419,98.95397,98.95375,98.9538,98.95389,98.95392,98.9539,98.95388,98.95398,98.95406,98.95405,98.95403,98.95382,98.95359,98.95337,98.95314,98.95292,98.95287,98.95299,98.95314,98.9533,98.95345,98.95357,98.9537,98.95385,98.95399,98.95411,98.95426,98.95439,98.95455,98.9547,98.95485,98.95499,98.95513,98.95528,98.9554,98.95555,98.95571,98.95584,98.95597,98.95612,98.95626,98.95639,98.95634,98.95619,98.95599,98.95578,98.95557,98.95535,98.9552,98.95502,98.95481,98.95467,98.95449,98.95426,98.95423,98.95425,98.95413,98.95395,98.95374,98.95357,98.95342,98.95335,98.9532,98.95302,98.95281,98.95285,98.95277,98.95258,98.95235,98.95218,98.9521,98.95202,98.95194,98.95181,98.95169,98.95156,98.95138,98.95116,98.95095,98.95078,98.9506,98.95038,98.95016,98.94994,98.94972,98.94949,98.94931,98.94908,98.94887,98.94866,98.94852,98.94862,98.94843,98.94821,98.94799,98.94778,98.94755,98.94732,98.94709,98.94687,98.94667,98.94658,98.94659,98.94669,98.94679,98.94691,98.94687,98.94684,98.94685,98.94688,98.94695,98.9471,98.94725,98.94731,98.94737,98.9474,98.94746,98.94758,98.94759,98.94768,98.94781,98.94792,98.94793,98.948,98.94815,98.94828,98.9484,98.94845,98.9485,98.94861,98.9487,98.94886,98.94896,98.949,98.94894,98.94884,98.94871,98.94866,98.94876,98.94878,98.94877,98.94869,98.94858,98.94847,98.94838,98.94829,98.94825,98.9482,98.94812,98.948,98.94779,98.94756,98.94745,98.94744,98.94745,98.94747,98.9475,98.94754,98.94756,98.94758,98.94744,98.94729,98.9471,98.94687,98.94665,98.94643,98.94626,98.94614,98.946,98.94581,98.94561,98.94551,98.94533,98.94513,98.94492,98.94473,98.94458,98.94442,98.94427,98.9441,98.94391,98.94375,98.94361,98.94345,98.94327,98.94308,98.94292,98.94273,98.94251,98.94228,98.94205,98.94184,98.94163,98.94143,98.94127,98.94109,98.94098,98.94093,98.94098,98.94104,98.94103,98.94096,98.94078,98.94058,98.94038,98.94015,98.93992,98.9397,98.9395,98.93939,98.93943,98.93949,98.93956,98.93958,98.93944,98.93932,98.9392,98.93906,98.93896,98.9388,98.93862,98.93844,98.9383,98.9381,98.93787,98.93768,98.93748,98.93727,98.93704,98.93684,98.93664,98.93647,98.93632,98.93614,98.93599,98.9358,98.93562,98.93548,98.93549,98.9355,98.93543,98.93532,98.93515,98.93494,98.93471,98.93449,98.9343,98.93433,98.93431,98.9342,98.93397,98.93374,98.93352,98.9333,98.93307,98.93283,98.93263,98.9327,98.93273,98.93266,98.9325,98.93229,98.93212,98.93191,98.93178,98.93156,98.93134,98.93112,98.93091,98.9307,98.9306,98.93044,98.93029,98.93016,98.93002,98.92983,98.92965,98.92943,98.9292,98.92898,98.92875,98.92852,98.92829,98.92812,98.92799,98.92785,98.92762,98.9274,98.92717,98.92695,98.92674,98.92655,98.92639,98.92617,98.92594,98.92575,98.9257,98.92557,98.92535,98.92513,98.92492,98.9247,98.92448,98.92426,98.92403,98.92382,98.92362,98.92345,98.92329,98.92308,98.92287,98.92266,98.92249,98.92231,98.92211,98.92189,98.92174,98.92155,98.92136,98.92116,98.92099,98.9208,98.92062,98.92048,98.9203,98.9201,98.91989,98.91967,98.91948,98.91931,98.91929,98.91925,98.91913,98.91892,98.91871,98.9185,98.91831,98.91811,98.91792,98.91771,98.91749,98.91738,98.91729,98.9171,98.91698,98.91684,98.91671,98.91654,98.91634,98.91615,98.91596,98.91576,98.91556,98.91536,98.9152,98.91509,98.91502,98.91491,98.91493,98.91499,98.91487,98.9147,98.91453,98.91437,98.91423,98.91407,98.91388,98.91366,98.91342,98.91321,98.91306,98.91288,98.91268,98.91245,98.91224,98.91209,98.91203,98.912,98.91198,98.91192,98.91173,98.91151,98.91133,98.91115,98.91106,98.91089,98.91071,98.91061,98.91046,98.91028,98.91011,98.91006,98.90986,98.90963,98.9094,98.90922,98.90908,98.90895,98.90882,98.90866,98.90848,98.90827,98.90805,98.90782,98.9076,98.90738,98.90716,98.90697,98.90678,98.90664,98.90654,98.9065,98.9064,98.90617,98.90597,98.90574,98.90551,98.90528,98.90505,98.90483,98.90461,98.90438,98.90416,98.90401,98.90384,98.90364,98.90349,98.90327,98.9031,98.90288,98.90266,98.90247,98.90227,98.90206,98.90183,98.90162,98.90154,98.90152,98.90138,98.90118,98.90095,98.90073,98.9005,98.90028,98.90021,98.90004,98.89981,98.89967,98.89947,98.89923,98.89904,98.89889,98.89876,98.89854,98.89833,98.89825,98.89819,98.89796,98.89774,98.89753,98.89737,98.89726,98.89704,98.89686,98.89669,98.8966,98.89666,98.89677,98.8969,98.89704,98.8972,98.89731,98.89742,98.89763,98.89775,98.89778,98.8978,98.89779,98.89768,98.89769,98.89785,98.89804,98.89825,98.89835,98.89831,98.89835,98.89842,98.89858,98.89871,98.89881,98.89903,98.89913,98.89909,98.89898,98.89896,98.89905,98.89923,98.89941,98.89961,98.89981,98.90003,98.90022,98.90041,98.90056,98.90078,98.90101,98.90124,98.90147,98.90169,98.90187,98.90208,98.90232,98.90252,98.90263,98.9027,98.90276,98.90284,98.90294,98.90308,98.90317,98.90313,98.90306,98.903,98.90307,98.90316,98.90293,98.9027,98.90252,98.9023,98.90207,98.90187,98.9017,98.90151,98.90136,98.90122,98.9011,98.90106,98.90105,98.90106,98.90108,98.90115,98.90114,98.90103,98.90091,98.90072,98.90057,98.90036,98.90018,98.90025,98.90034,98.90036,98.90049,98.90065,98.90075,98.90081,98.9009,98.90107,98.90126,98.90146,98.90165,98.90181,98.90198,98.90219,98.90242,98.90263,98.90285,98.90308,98.90331,98.90351,98.90364,98.90366,98.90373,98.90386,98.90399,98.9041,98.90424,98.90436,98.9045,98.90456,98.90468,98.90485,98.90491,98.90489,98.90481,98.90474,98.90489,98.90509,98.90529,98.90544,98.90556,98.90572,98.90586,98.90604,98.90624,98.90646,98.90666,98.90688,98.9071,98.90728,98.90751,98.90774,98.90795,98.90812,98.90831,98.90846,98.90863,98.90881,98.90899,98.90916,98.90931,98.90953,98.90976,98.90998,98.9102,98.91042,98.91063,98.91085,98.91106,98.9113,98.91152,98.91174,98.91194,98.91215,98.91237,98.91256,98.91268,98.91278,98.91295,98.91306,98.91325,98.91346,98.9137,98.91392,98.91413,98.91436,98.91455,98.9147,98.91484,98.91488,98.91505,98.91516,98.91528,98.91539,98.91542,98.91541,98.91542,98.9154,98.91535,98.91528,98.91527,98.91545,98.91552,98.91565,98.91586,98.91607,98.9163,98.91649,98.9167,98.9169,98.91699,98.917,98.91702,98.91711,98.91714,98.9172,98.91728,98.91734,98.91734,98.9174,98.91743,98.9174,98.91744,98.91735,98.91712,98.91695,98.91676,98.91676,98.9167,98.91659,98.9164,98.91627,98.91618,98.91609,98.91615,98.9162,98.91622,98.9162,98.91637,98.91637,98.91643,98.91652,98.91664,98.91677,98.91695,98.9171,98.91725,98.9174,98.9176,98.91779,98.91794,98.91805,98.9182,98.91836,98.91846,98.91859,98.91872,98.91886,98.91898,98.91912,98.91931,98.9195,98.91964,98.91984,98.92006,98.92028,98.9205,98.92069,98.92085,98.92095,98.92113,98.92116,98.92132,98.92154,98.92176,98.92199,98.92199,98.92189,98.92192,98.92201,98.92213,98.92229,98.92251,98.92269,98.92287,98.92303,98.92314,98.92327,98.92339,98.9236,98.92376,98.92395,98.92411,98.92424,98.9244,98.92448,98.92437,98.92444,98.92447,98.92464,98.9248,98.92495,98.925,98.92508,98.9251,98.92516,98.9253,98.92543,98.92558,98.92578,98.92592,98.92602,98.92622,98.92645,98.92667,98.92686,98.92699,98.92713,98.92724,98.92732,98.92739,98.9276,98.9278,98.92802,98.92813,98.9283,98.92835,98.92822,98.9282,98.92824,98.9281,98.92806,98.92807,98.92814,98.92832,98.92847,98.9286,98.92866,98.92879,98.92902,98.92923,98.92945,98.92951,98.9296,98.9297,98.92971,98.92987,98.93002,98.93015,98.93018,98.93028,98.93051,98.93074,98.93092,98.93111,98.93131,98.93132,98.93129,98.9313,98.93143,98.93164,98.93183,98.93205,98.93227,98.93249,98.93271,98.93286,98.93288,98.93303,98.93316,98.93332,98.93353,98.93375,98.93398,98.9342,98.93443,98.93459,98.9347,98.93488,98.9351,98.93533,98.93557,98.9358,98.93595,98.93601,98.93607,98.93601,98.93583,98.93563,98.93542,98.9352,98.93504,98.93502,98.93499,98.93497,98.93487,98.93469,98.93447,98.93429,98.9342,98.93432,98.93433,98.93432,98.93446,98.93468,98.9349,98.93513,98.9353,98.9354,98.93549,98.93548,98.93549,98.93563,98.93581,98.93601,98.93616,98.93633,98.93648,98.93665,98.93686,98.93707,98.93729,98.93751,98.9377,98.93789,98.93812,98.93833,98.9385,98.93871,98.93887,98.93901,98.93913,98.93924,98.93935,98.93951,98.9396,98.93953,98.93947,98.93942,98.9394,98.93956,98.93976,98.93999,98.94023,98.94045,98.94065,98.94084,98.94097,98.94102,98.94102,98.94094,98.94092,98.94099,98.94114,98.94131,98.94151,98.94171,98.94191,98.94213,98.94237,98.9426,98.94281,98.943,98.94316,98.94335,98.94353,98.94367,98.94382,98.94401,98.94419,98.94434,98.9445,98.94465,98.94484,98.94503,98.94525,98.94543,98.94556,98.94574,98.94594,98.94609,98.94619,98.94634,98.94652,98.94675,98.94698,98.94721,98.94736,98.9475,98.94755,98.94754,98.94752,98.94747,98.94747,98.94745,98.94743,98.9475,98.94769,98.94791,98.94808,98.94818,98.94823,98.94827,98.94832,98.94844,98.94852,98.94863,98.94872,98.94877,98.94879,98.9487,98.94865,98.94877,98.94889,98.94897,98.94898,98.94891,98.94875,98.94861,98.94839,98.94816,98.94794,98.94772,98.94749,98.94726,98.94702,98.94679,98.94656,98.94641,98.94619,98.94597,98.94577,98.94562,98.94542,98.94523,98.945,98.9448,98.94459,98.94439,98.94417,98.94395,98.94373,98.94355,98.94342,98.94323,98.94306,98.94291,98.94275,98.9426,98.94245,98.94226,98.94216,98.94198,98.94177,98.94157,98.94138,98.94124,98.94111,98.94093,98.94081,98.94068,98.94059,98.94047,98.94032,98.94024,98.9401,98.94,98.93982,98.93965,98.9395,98.93957,98.93962,98.93984,98.93998,98.9401,98.94032,98.94043,98.94053,98.94051,98.94051,98.9405,98.94051,98.94063,98.94067,98.94066,98.94073,98.94074,98.94084,98.94095,98.94098,98.94114,98.9413,98.94142,98.94156,98.94178,98.94201,98.94224,98.94247,98.9427,98.94292,98.9431,98.94327,98.94343,98.94355,98.94368,98.94379,98.94374,98.94362,98.94359,98.94376,98.94396,98.94415,98.94427,98.9444,98.94459,98.94482,98.94499,98.94519,98.94535,98.9455,98.94563,98.94583,98.94603,98.9462,98.94642,98.94656,98.94678,98.9469,98.94705,98.94727,98.9475,98.94766,98.94783,98.94798,98.94809,98.94825,98.9484,98.94861,98.94881,98.94897,98.94914,98.9493,98.94945,98.94946,98.94951,98.94957,98.94963,98.94977,98.9499,98.94998,98.94999,98.95005,98.95013,98.95022,98.95032,98.95048,98.95068,98.95082,98.95093,98.95105,98.95114,98.95119,98.95122,98.95125,98.95147,98.95167,98.95184,98.95202,98.95225,98.95245,98.95267,98.95284,98.95298,98.95298,98.95297,98.95287,98.95284,98.95282,98.95302,98.95321,98.9534,98.95357,98.95367,98.95371,98.95381,98.95404,98.95415,98.95426,98.95432,98.95438,98.95452,98.95472,98.95493,98.95514,98.95537,98.9556,98.95583,98.95606,98.95629,98.95652,98.95675,98.95699,98.95722,98.95737,98.9574,98.95739,98.95739,98.9574,98.95754,98.95777,98.958,98.95824,98.95847,98.95856,98.95859,98.95871,98.95893,98.95914,98.95936,98.95957,98.95978,98.96,98.96021,98.96042,98.96064,98.96086,98.96106,98.96127,98.96149,98.96171,98.96192,98.96214,98.96237,98.96259,98.96281,98.96279,98.96275,98.96268,98.96261,98.9625,98.96243,98.96236,98.9623,98.96223,98.96215,98.96208,98.96199,98.96195,98.96187,98.9618,98.96173,98.96171,98.96163,98.96157,98.96153,98.96144,98.96137,98.96128,98.96109,98.96094],"ele":[329.3,329.8,330.4,331.4,332.1,332.5,332.5,332.1,331.3,330.6,330.0,329.2,328.2,327.0,325.6,324.2,323.4,323.0,323.1,323.9,325.1,326.3,327.5,328.8,329.8,330.4,330.8,331.0,331.0,331.0,331.0,331.0,331.2,331.6,332.0,332.7,333.7,334.5,335.3,336.3,337.0,337.2,337.0,336.8,336.3,335.7,335.3,335.5,335.5,335.6,335.8,336.3,337.1,338.4,339.6,340.4,340.8,341.0,340.8,340.6,340.8,341.0,341.3,341.9,342.5,342.9,343.3,343.4,343.4,343.8,344.8,346.1,347.9,349.7,351.0,352.0,352.4,351.8,350.7,349.7,348.4,347.4,346.9,346.1,346.3,347.8,349.8,352.4,356.2,358.5,358.8,357.8,355.3,351.7,348.4,346.2,345.4,345.8,346.2,346.8,347.1,346.5,345.6,345.0,344.4,344.0,344.0,344.0,344.0,344.0,344.2,344.4,345.0,345.8,346.6,347.2,347.6,347.4,347.4,347.8,348.4,349.2,350.4,351.2,351.6,351.6,351.4,351.1,350.9,350.7,350.9,351.5,352.2,353.0,353.8,354.4,354.8,354.8,354.4,354.2,353.8,353.2,352.8,352.8,352.8,353.2,353.6,353.9,354.1,353.9,353.6,353.4,353.2,353.1,353.3,353.9,354.9,356.3,358.1,360.8,363.6,366.4,369.4,372.1,373.5,375.4,377.6,380.2,383.8,388.4,393.2,398.4,403.5,408.3,413.3,417.6,420.1,421.2,420.4,418.8,416.3,414.2,412.3,410.1,406.7,402.9,398.3,393.5,388.5,383.7,378.7,373.6,368.4,363.6,359.0,355.1,351.9,349.2,347.0,345.6,345.2,345.6,346.2,347.5,348.3,348.1,347.3,346.5,345.9,345.8,345.9,346.0,345.8,344.8,343.8,343.5,343.7,344.5,345.7,346.1,346.1,345.8,345.2,344.8,345.0,344.8,344.4,344.2,343.8,343.6,344.2,345.2,345.8,346.1,345.8,345.0,344.2,343.8,343.7,344.2,344.6,345.0,345.6,346.2,346.4,347.0,347.6,347.9,347.9,348.1,347.9,347.7,347.5,347.9,348.8,349.4,350.0,351.0,351.9,352.3,353.0,354.5,356.7,358.7,360.5,362.3,363.5,363.7,363.9,364.5,365.1,365.2,365.4,364.9,363.3,361.3,359.1,356.9,355.1,354.4,354.5,355.1,356.1,357.3,358.2,357.8,357.1,356.5,356.1,355.9,356.5,357.1,357.3,357.5,358.1,358.6,359.3,360.1,360.7,361.0,361.8,362.9,364.7,366.8,369.2,371.1,372.5,373.1,373.3,373.3,374.3,375.5,376.1,376.8,377.3,377.0,376.4,376.3,376.1,376.1,375.8,375.4,374.8,374.4,374.4,374.8,375.8,377.0,378.0,379.0,379.2,379.0,379.0,379.4,380.2,381.8,384.2,386.4,388.4,389.8,390.8,390.8,391.1,390.5,390.1,390.3,390.5,390.8,392.2,393.8,395.4,398.0,401.2,404.6,407.2,409.6,411.9,414.5,417.4,420.7,424.3,427.3,429.5,431.1,434.0,438.2,443.0,447.2,451.4,454.6,456.4,458.8,462.4,466.6,471.7,477.5,482.7,487.5,491.9,495.9,499.7,503.8,508.2,512.6,516.8,520.5,523.3,525.8,528.1,530.7,533.5,537.1,541.0,545.4,549.8,554.0,558.4,562.1,565.2,568.1,570.5,572.1,573.8,575.6,577.0,579.2,582.2,585.9,589.7,593.5,596.9,599.9,602.6,606.1,609.7,612.9,616.0,619.1,620.9,622.7,625.3,628.0,630.8,634.2,638.4,642.6,647.2,651.4,653.7,654.1,654.1,653.3,652.9,654.0,656.8,659.8,663.4,666.9,670.5,673.7,676.5,678.4,680.0,681.1,681.1,680.4,678.5,675.0,669.9,664.9,660.9,657.5,655.0,653.6,653.0,652.8,654.0,656.0,659.4,663.0,666.8,671.0,675.6,679.6,684.4,689.6,694.6,699.2,703.5,706.3,708.1,709.0,710.1,711.4,713.4,715.6,718.2,721.0,723.5,724.9,725.1,724.5,723.1,721.8,721.7,722.0,722.0,722.8,723.5,723.0,721.6,720.2,717.8,714.8,712.7,712.0,712.0,713.0,715.1,716.9,717.9,719.0,718.8,717.6,715.5,712.7,709.9,708.1,707.9,709.2,710.6,712.2,714.0,715.8,717.3,718.9,720.3,721.9,720.7,718.2,716.5,714.9,711.5,708.5,705.6,701.8,696.9,692.3,688.7,685.8,682.5,679.5,675.2,669.9,664.4,658.5,651.8,646.0,640.9,635.5,630.9,627.1,623.6,620.6,618.2,617.0,616.7,615.4,613.4,610.8,606.9,602.3,598.9,596.3,594.5,593.4,593.4,594.8,597.6,601.4,606.4,611.4,616.9,620.4,624.0,627.8,632.2,635.3,638.8,640.2,639.2,636.4,632.6,627.7,622.9,618.9,615.7,612.9,609.8,606.6,603.3,599.8,596.3,594.5,594.3,594.7,595.0,595.6,595.3,594.1,592.3,591.2,589.9,588.7,587.3,585.5,583.9,582.5,580.9,578.9,576.4,572.8,568.0,563.2,558.4,553.7,549.2,545.4,541.0,536.5,532.4,529.0,525.0,521.4,517.8,513.8,510.0,506.6,504.2,503.0,502.6,502.0,501.6,501.0,500.2,498.6,496.9,495.8,495.0,494.5,494.7,494.7,494.2,493.3,492.0,490.4,488.6,487.2,485.8,484.7,483.4,482.3,481.0,479.9,478.9,478.4,477.9,478.0,478.2,478.6,479.0,480.2,480.5,480.5,479.9,479.9,479.3,479.6,480.0,480.8,481.6,483.2,485.0,487.2,490.0,492.4,494.6,496.9,499.5,501.7,503.9,505.7,506.7,506.9,506.5,505.6,504.0,501.6,498.8,495.2,491.0,485.8,480.6,475.3,471.2,467.6,465.2,463.8,463.6,463.6,464.0,464.4,464.4,463.8,463.0,461.8,460.4,458.6,456.3,453.6,450.6,447.4,444.2,441.3,438.2,434.1,428.8,422.6,416.0,409.5,403.8,399.1,395.3,391.9,389.0,386.8,385.4,384.3,383.5,382.9,382.5,381.9,381.7,382.3,382.9,383.3,384.1,384.9,385.4,386.6,388.6,390.9,393.3,395.0,395.6,395.6,395.7,396.3,397.6,399.3,400.9,402.1,402.4,402.6,403.6,404.8,406.1,407.2,407.6,407.6,407.7,407.8,408.4,409.6,410.6,412.1,413.6,415.4,417.7,419.3,420.3,421.3,421.7,421.4,420.8,420.2,418.6,416.4,414.9,413.6,412.1,411.0,410.7,409.7,408.4,407.0,405.8,404.5,403.5,403.0,402.6,401.3,399.5,397.7,395.7,393.7,392.1,390.7,389.0,387.2,385.7,384.7,383.9,383.6,383.6,383.5,383.6,383.5,383.7,384.4,385.6,386.6,388.3,389.4,390.4,391.0,391.2,390.6,389.8,388.5,387.0,385.4,384.4,383.2,381.4,379.3,377.6,375.8,374.4,373.8,374.1,374.5,374.9,375.2,375.1,374.4,373.7,373.1,372.9,373.2,373.6,374.0,374.2,374.2,373.9,373.7,373.4,373.0,372.6,372.1,371.5,371.0,370.7,370.1,369.3,368.7,368.1,367.4,367.0,367.0,367.2,367.4,368.1,369.3,370.9,372.9,375.0,376.5,377.3,378.1,378.7,378.8,379.0,379.4,379.9,380.5,382.1,384.6,387.0,388.7,389.5,389.7,388.8,387.6,386.6,385.8,384.5,383.0,381.8,380.8,379.2,377.6,376.2,374.8,373.2,372.0,371.3,370.7,370.4,370.4,370.5,370.7,370.7,370.0,368.7,367.0,365.2,363.1,361.5,360.3,359.6,359.2,359.0,359.1,359.0,358.9,358.7,358.9,359.0,359.5,360.0,360.6,360.8,361.0,361.2,361.8,362.7,364.0,365.8,367.6,369.0,370.5,371.8,372.8,373.6,374.6,375.2,375.7,375.9,376.2,376.2,376.6,377.1,377.3,376.7,376.2,374.9,373.7,373.0,372.9,372.6,372.3,370.9,369.0,366.7,364.6,362.9,361.7,361.1,360.5,359.7,358.8,358.2,357.8,357.3,357.2,356.6,356.0,355.4,355.8,356.1,357.0,357.6,357.8,356.8,355.7,354.8,354.2,354.1,355.3,357.7,359.9,362.3,364.1,365.3,365.1,365.1,364.6,364.0,363.6,363.5,362.9,361.6,360.3,358.3,356.1,353.9,352.7,352.1,351.3,350.5,350.1,349.5,348.7,348.3,348.1,348.1,348.4,348.4,348.2,347.9,347.3,346.4,345.9,345.7,345.5,345.1,345.0,344.3,344.1,344.2,344.9,345.7,346.5,346.3,345.7,344.8,344.0,343.8,343.8,344.2,344.6,345.0,345.0,345.4,345.6,346.0,345.8,345.4,344.5,343.8,343.4,343.6,345.0,346.7,347.6,347.6,347.6,346.7,346.7,348.1,350.7,353.5,356.8,359.8,362.4,364.4,366.6,368.7,370.7,372.3,374.4,376.8,379.3,381.3,383.8,386.0,388.5,391.5,396.3,401.7,408.0,414.1,421.1,428.0,434.6,441.2,448.2,454.1,459.3,464.4,469.0,473.6,478.6,484.6,490.8,496.8,502.2,508.0,513.4,518.9,525.3,532.9,540.3,546.9,553.4,559.8,565.3,571.9,579.2,587.0,594.6,601.7,606.9,610.1,611.1,610.3,607.8,604.2,600.5,597.3,595.0,594.9,595.7,596.1,596.7,597.1,595.8,594.4,593.3,591.9,591.5,591.5,591.6,592.2,593.2,592.8,592.0,590.7,589.0,586.2,582.8,579.8,577.0,574.4,572.2,570.5,568.3,565.6,563.4,561.7,559.6,557.4,554.7,551.3,547.2,543.0,537.8,532.0,525.4,517.5,509.3,502.3,496.2,490.4,486.9,483.3,481.3,479.4,477.6,475.4,473.8,470.4,467.1,463.6,459.3,454.8,450.2,445.5,439.9,433.9,428.0,422.0,415.9,411.1,407.3,403.5,400.5,398.3,396.9,395.7,394.4,393.4,391.9,389.7,387.3,385.3,382.7,380.1,377.6,375.0,372.3,369.5,366.6,363.9,361.7,360.1,359.1,358.6,358.2,357.4,356.2,355.0,353.7,352.5,352.1,351.7,351.3,350.7,349.3,347.0,344.6,342.0,339.8,338.6,338.2,338.5,339.3,340.1,340.7,340.4,339.8,338.9,337.5,335.9,334.9,333.9,333.2,333.0,333.0,332.8,332.6,332.6,332.9,333.3,333.9,334.7,335.1,335.2,335.0,334.2,333.2,332.4,331.8,331.6,332.2,333.0,334.0,335.2,336.2,336.8,337.0,337.0,336.5,335.7,334.9,334.1,333.3,332.4,331.8,331.4,331.2,331.0,331.0,331.0,331.0,331.0,330.8,330.3,329.5,328.3,326.9,325.5,324.2,323.2,322.8,323.0,323.8,325.0,326.4,327.8,328.8,329.6,330.2,330.8,331.6,331.9,332.1,331.9,331.5,330.5,330.0,329.5,329.3],"step":25,"total":32066.9};window.DEFAULT_API="";</script>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/motion@10.18.0/dist/motion.min.js"></script>
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const R=window.ROUTE, N=R.lat.length, STEP=R.step, TOTAL=R.total;
+const D=new Float64Array(N); for(let i=0;i<N;i++) D[i]=Math.min(i*STEP,TOTAL);
+const E=R.ele;
+// grade per point (smoothed over ±4 pts = ±100 m)
+const G=new Float64Array(N);
+for(let i=0;i<N;i++){const a=Math.max(0,i-4),b=Math.min(N-1,i+4);G[i]=(E[b]-E[a])/Math.max(1,D[b]-D[a]);}
+// segment grade (between i and i+1) blended
+const SG=new Float64Array(N-1); for(let i=0;i<N-1;i++){SG[i]=Math.max(-.45,Math.min(.45,(G[i]+G[i+1])/2));}
+const maxEle=Math.max(...E), minEle=Math.min(...E);
+$('#maxEle').textContent=Math.round(maxEle)+' m';
+
+/* ---------- state ---------- */
+const PALETTE=['#c6f36b','#ff7ab6','#5cc8ff','#ffb547','#b18cff','#4ff0d2','#ff6b5b','#f5f06b'];
+const DEF_ST=[
+  {id:'A8-1',name:'A8',full:'Huay Tung Tao (ห้วยตึงเฒ่า)',km:7.33,co:'09:30',sup:true},
+  {id:'W2',name:'W2',full:'Mae Nai (แม่ไน)',km:17.73,co:'12:50',sup:false},
+  {id:'A8-2',name:'A8',full:'Huay Tung Tao (ห้วยตึงเฒ่า)',km:23.83,co:'14:20',sup:true},
+];
+const FINISH={id:'FIN',name:'FINISH',full:'CMECC (ศูนย์ประชุมฯ)',km:TOTAL/1000,co:'17:00'};
+const DEFAULT={v:1,
+  runners:[{n:'Pong',c:PALETTE[0],w:'07:00',m:'goal',v:'5:30'},{n:'เพื่อน 1',c:PALETTE[1],w:'07:15',m:'goal',v:'6:30'},{n:'เพื่อน 2',c:PALETTE[2],w:'07:30',m:'pace',v:'7:00'}],
+  set:{climb:1,desc:1,fat:.08,stop:3,gel:40,buf:30},
+  st:DEF_ST.map(s=>({km:s.km,co:s.co})),fin:'17:00'};
+let S;
+
+const b64e=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const b64d=s=>JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g,'+').replace(/_/g,'/')))));
+function load(){
+  const h=location.hash.match(/p=([^&]+)/);
+  if(h){try{return sanitize(b64d(h[1]))}catch(e){console.warn(e)}}
+  try{const l=localStorage.getItem('pst30plan');if(l)return sanitize(JSON.parse(l))}catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT));
+}
+function sanitize(o){
+  const d=JSON.parse(JSON.stringify(DEFAULT));
+  if(Array.isArray(o.runners)&&o.runners.length) d.runners=o.runners.slice(0,12).map((r,i)=>({n:String(r.n||'Runner').slice(0,24),c:/^#[0-9a-f]{6}$/i.test(r.c)?r.c:PALETTE[i%8],w:/^\d\d:\d\d$/.test(r.w)?r.w:'07:00',m:r.m==='pace'?'pace':'goal',v:String(r.v||'6:00').slice(0,8)}));
+  if(o.set) for(const k in d.set) if(isFinite(+o.set[k])) d.set[k]=+o.set[k];
+  if(Array.isArray(o.st)&&o.st.length===3) d.st=o.st.map((s,i)=>({km:isFinite(+s.km)?+s.km:DEF_ST[i].km,co:/^\d\d:\d\d$/.test(s.co)?s.co:DEF_ST[i].co}));
+  if(/^\d\d:\d\d$/.test(o.fin)) d.fin=o.fin;
+  return d;
+}
+S=load();
+
+/* ---------- time utils ---------- */
+const hm2s=s=>{const p=String(s).split(':').map(Number);return p.length===3?p[0]*3600+p[1]*60+p[2]:p[0]*3600+(p[1]||0)*60};
+const ms2s=s=>{const p=String(s).split(':').map(Number);return p[0]*60+(p[1]||0)};
+const pad=n=>String(n).padStart(2,'0');
+const clk=sec=>{sec=Math.round(sec);return pad(Math.floor(sec/3600)%24)+':'+pad(Math.floor(sec%3600/60))};
+const clks=sec=>{sec=Math.round(sec);return clk(sec)+':'+pad(sec%60)};
+const dur=sec=>{sec=Math.round(sec);const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60);return h+':'+pad(m)};
+const durms=sec=>{sec=Math.round(sec);const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;return (h?h+':'+pad(m):m)+':'+pad(s)};
+const pace=spk=>{spk=Math.round(spk);return Math.floor(spk/60)+':'+pad(spk%60)};
+
+/* ---------- pacing model ---------- */
+const minetti=i=>155.4*i**5-30.4*i**4-43.3*i**3+46.3*i**2+19.5*i+3.6;
+function costF(g,set){
+  if(g>=0) return 1+set.climb*(minetti(g)/3.6-1);
+  const a=-g;
+  if(a<=.08) return 1-2*a*Math.min(1.3,set.desc);
+  return (1-.16*Math.min(1.3,set.desc))+(a-.08)*2.6/set.desc;
+}
+function stations(){return S.st.map((s,i)=>({...DEF_ST[i],km:s.km,co:s.co})).concat([{...FINISH,co:S.fin}])}
+function simulate(r){
+  const set=S.set, st=stations();
+  const w=new Float64Array(N); // weighted cost to point i
+  for(let i=1;i<N;i++){const L=D[i]-D[i-1];const fat=1+set.fat*(D[i]/TOTAL);w[i]=w[i-1]+L*costF(SG[i-1],set)*fat;}
+  const stopSec=set.stop*60, nStops=3;
+  let flat; // sec per m
+  let goal=null;
+  if(r.m==='goal'){goal=hm2s(r.v);flat=Math.max(1,(goal-stopSec*nStops))/w[N-1];}
+  else flat=ms2s(r.v)/1000;
+  if(!isFinite(flat)||flat<=0) flat=0.36;
+  const start=hm2s(r.w);
+  // build t/d arrays with stops
+  const st3=st.slice(0,3).map(s=>s.km*1000);
+  const T=[],DD=[];let extra=0,si=0;
+  for(let i=0;i<N;i++){
+    while(si<3&&D[i]>=st3[si]){ // insert arrival+stop at exact station dist
+      const dkm=st3[si];const j=Math.max(1,i);const fr=(dkm-D[j-1])/Math.max(1e-6,D[j]-D[j-1]);
+      const tw=(w[j-1]+fr*(w[j]-w[j-1]))*flat+extra;
+      T.push(tw);DD.push(dkm);extra+=stopSec;T.push(tw+stopSec);DD.push(dkm);si++;
+    }
+    T.push(w[i]*flat+extra);DD.push(D[i]);
+  }
+  const finish=T[T.length-1];
+  const arr=st.map((s,k)=>{const dm=Math.min(s.km*1000,TOTAL);const t=timeAtDist(T,DD,dm,true);return {...s,t,clock:start+t,buffer:hm2s(s.co)-(start+t)}});
+  return {r,start,flat,T,DD,finish,arr,w};
+}
+function timeAtDist(T,DD,dm,first){
+  let lo=0,hi=DD.length-1;
+  while(lo<hi){const m=(lo+hi)>>1; if(DD[m]<dm) lo=m+1; else hi=m;}
+  if(lo===0) return T[0];
+  const f=(dm-DD[lo-1])/Math.max(1e-9,DD[lo]-DD[lo-1]);return T[lo-1]+f*(T[lo]-T[lo-1]);
+}
+function distAtTime(sim,t){
+  const T=sim.T,DD=sim.DD; if(t<=0) return 0; if(t>=T[T.length-1]) return TOTAL;
+  let lo=0,hi=T.length-1; while(lo<hi){const m=(lo+hi)>>1; if(T[m]<t) lo=m+1; else hi=m;}
+  const f=(t-T[lo-1])/Math.max(1e-9,T[lo]-T[lo-1]);return DD[lo-1]+f*(DD[lo]-DD[lo-1]);
+}
+function ptAt(dm){
+  const x=Math.max(0,Math.min(TOTAL,dm))/STEP;const i=Math.min(N-2,Math.floor(x)),f=Math.min(1,x-i);
+  return [R.lon[i]+f*(R.lon[i+1]-R.lon[i]),R.lat[i]+f*(R.lat[i+1]-R.lat[i]),E[i]+f*(E[i+1]-E[i]),G[i]];
+}
+function bearing(a,b){const toR=Math.PI/180;const y=Math.sin((b[0]-a[0])*toR)*Math.cos(b[1]*toR);const x=Math.cos(a[1]*toR)*Math.sin(b[1]*toR)-Math.sin(a[1]*toR)*Math.cos(b[1]*toR)*Math.cos((b[0]-a[0])*toR);return Math.atan2(y,x)/toR;}
+function gainLoss(a,b){let up=0,dn=0;const i0=Math.round(a/STEP),i1=Math.round(b/STEP);for(let i=i0+1;i<=Math.min(i1,N-1);i++){const d=E[i]-E[i-1];if(d>0)up+=d;else dn-=d;}return [up,dn];}
+
+let SIMS=[];let LIVE=null;
+const initial=n=>{n=String(n).trim();const m=n.match(/(\d+)$/);if(m&&n.length>m[0].length)return m[1].slice(-2);const ch=[...n].find(c=>!/[\u0E40-\u0E44\s]/.test(c));return ch?ch.toUpperCase():'?'};
+function recompute(){SIMS=S.runners.map(simulate);}
+
+/* ---------- grade colours ---------- */
+const GC=[[-.20,'#3b6cff'],[-.10,'#5cc8ff'],[-.03,'#6fe3c1'],[0,'#9be36b'],[.05,'#e8f06b'],[.10,'#ffb547'],[.15,'#ff7a45'],[.22,'#ff3d6e'],[.30,'#c04bff']];
+function hex2rgb(h){return [1,3,5].map(i=>parseInt(h.slice(i,i+2),16))}
+function gcol(g){if(g<=GC[0][0])return GC[0][1];for(let i=1;i<GC.length;i++){if(g<=GC[i][0]){const t=(g-GC[i-1][0])/(GC[i][0]-GC[i-1][0]);const a=hex2rgb(GC[i-1][1]),b=hex2rgb(GC[i][1]);return 'rgb('+a.map((v,k)=>Math.round(v+t*(b[k]-v))).join(',')+')'}}return GC[GC.length-1][1]}
+$('#lgBar').innerHTML=[-.2,-.15,-.1,-.05,0,.03,.06,.1,.14,.18,.22,.26].map(g=>`<i style="background:${gcol(g)}"></i>`).join('');
+
+/* ---------- hero ridge ---------- */
+(()=>{let p='M0,120 ';for(let x=0;x<=1000;x+=4){const i=Math.round(x/1000*(N-1));p+=`L${x},${(120-(E[i]-minEle)/(maxEle-minEle)*100).toFixed(1)} `}p+='L1000,120Z';
+$('#ridge').innerHTML=`<defs><linearGradient id="rg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#c6f36b" stop-opacity=".7"/><stop offset="1" stop-color="#c6f36b" stop-opacity="0"/></linearGradient></defs><path d="${p}" fill="url(#rg)" stroke="#c6f36b" stroke-width="1.5"/>`;})();
+function tickCountdown(){const t=new Date('2026-11-14T07:00:00+07:00')-Date.now();const el=$('#countdown');if(t<=0){el.textContent=t>-10*3600e3?'RACE DAY 🔥':'จบแล้ว 🎉';return}const d=Math.floor(t/864e5),h=Math.floor(t%864e5/36e5),m=Math.floor(t%36e5/6e4),s=Math.floor(t%6e4/1e3);el.textContent=(d?d+'d ':'')+pad(h)+':'+pad(m)+':'+pad(s)}
+tickCountdown();setInterval(tickCountdown,1000);
+
+/* ---------- side panel UI ---------- */
+function renderRunners(){
+  const box=$('#runners');box.innerHTML='';
+  S.runners.forEach((r,i)=>{
+    const sim=SIMS[i];
+    const el=document.createElement('div');el.className='runner';el.style.setProperty('--c',r.c);
+    el.innerHTML=`<div class="r1"><input type="color" value="${r.c}" data-k="c"><input type="text" value="${esc(r.n)}" data-k="n" maxlength="24" aria-label="name"><button class="x" title="ลบ">✕</button></div>
+    <div class="r2">
+      <label>Wave<select data-k="w">${['07:00','07:15','07:30'].map(w=>`<option ${w===r.w?'selected':''}>${w}</option>`).join('')}</select></label>
+      <label>โหมด<select data-k="m"><option value="goal" ${r.m==='goal'?'selected':''}>Goal</option><option value="pace" ${r.m==='pace'?'selected':''}>Flat pace</option></select></label>
+      <label>${r.m==='goal'?'เวลา (h:mm)':'เพซ (m:ss)'}<input type="text" data-k="v" value="${esc(r.v)}" inputmode="numeric"></label>
+    </div>
+    <div class="res"><span>เข้าเส้นชัย <b>${clk(sim.start+sim.finish)}</b></span><span>เวลา <b>${dur(sim.finish)}</b></span><span>flat <b>${pace(sim.flat*1000)}/km</b></span><span>avg <b>${pace(sim.finish/(TOTAL/1000))}/km</b></span></div>`;
+    el.querySelectorAll('[data-k]').forEach(inp=>{
+      const ev=inp.tagName==='INPUT'&&inp.type==='text'?'change':'input';
+      inp.addEventListener(ev,()=>{const k=inp.dataset.k;let v=inp.value;
+        if(k==='v'&&!/^\d{1,2}:\d{2}$/.test(v.trim())){inp.style.borderColor='var(--red)';toast('รูปแบบเวลา เช่น 5:30 หรือ 6:45');return}
+        r[k]=k==='v'?v.trim():v; if(k==='m') r.v=v==='goal'?dur(sim.finish):pace(sim.flat*1000);
+        update(true, k==='m'||k==='c'||k==='n');
+      });
+    });
+    el.querySelector('.x').onclick=()=>{if(S.runners.length<=1)return toast('ต้องมีอย่างน้อย 1 คน');S.runners.splice(i,1);update(true,true)};
+    box.appendChild(el);
+  });
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+$('#addR').onclick=()=>{const i=S.runners.length;if(i>=12)return;S.runners.push({n:'เพื่อน '+i,c:PALETTE[i%8],w:'07:15',m:'goal',v:'6:00'});update(true,true);const last=$('#runners').lastElementChild;if(window.Motion)Motion.animate(last,{opacity:[0,1],transform:['scale(.95)','none']},{duration:.4})};
+$('#resetR').onclick=()=>{if(!confirm('รีเซ็ตแผนทั้งหมด?'))return;S=JSON.parse(JSON.stringify(DEFAULT));initControls();update(true,true)};
+
+const SLID={climb:v=>'×'+(+v).toFixed(2),desc:v=>'×'+(+v).toFixed(2),fat:v=>'+'+Math.round(v*100)+'%',stop:v=>v+' นาที',gel:v=>v+' นาที',buf:v=>v+' นาที'};
+function initControls(){
+  for(const k in SLID){const el=$('#'+k);el.value=S.set[k];$('#v-'+k).textContent=SLID[k](S.set[k]);setP(el);
+    el.oninput=()=>{S.set[k]=+el.value;$('#v-'+k).textContent=SLID[k](el.value);setP(el);update(true,false)}}
+  const box=$('#stEdit');box.innerHTML='<div class="st" style="color:var(--dim);font-size:11px"><span></span><span>กม. (km)</span><span>Cutoff</span></div>';
+  stations().forEach((s,i)=>{const row=document.createElement('div');row.className='st';
+    row.innerHTML=`<b style="color:${i<3?'var(--acc2)':'var(--acc)'}">${s.name}${s.id==='A8-1'?'·1':s.id==='A8-2'?'·2':''}</b>`+
+    (i<3?`<input type="number" step="0.01" min="0.1" max="32" value="${s.km}">`:`<span style="font-family:var(--mono)">${(TOTAL/1000).toFixed(2)}</span>`)+
+    `<input type="time" value="${s.co}">`;
+    const ins=row.querySelectorAll('input');
+    if(i<3){ins[0].onchange=()=>{let v=+ins[0].value;const lo=i?S.st[i-1].km+0.1:0.1,hi=i<2?S.st[i+1].km-0.1:TOTAL/1000-0.1;if(!(v>=lo&&v<=hi)){toast(`ต้องอยู่ระหว่าง ${lo.toFixed(1)}–${hi.toFixed(1)} km`);ins[0].value=S.st[i].km;return}S.st[i].km=v;update(true,true)};
+      ins[1].onchange=()=>{if(ins[1].value){S.st[i].co=ins[1].value;update(true,false)}}}
+    else ins[0].onchange=()=>{if(ins[0].value){S.fin=ins[0].value;update(true,false)}};
+    box.appendChild(row)});
+}
+function setP(el){el.style.setProperty('--p',((el.value-el.min)/(el.max-el.min)*100)+'%')}
+
+/* ---------- results panes ---------- */
+function bufBadge(b){const m=Math.round(b/60),bf=S.set.buf;if(b<0)return `<span class="badge b-dead">เกิน ${-m}′</span>`;if(m<bf)return `<span class="badge b-bad">+${m}′</span>`;if(m<bf*2)return `<span class="badge b-warn">+${m}′</span>`;return `<span class="badge b-ok">+${m}′</span>`}
+function renderAid(){
+  const st=stations();
+  let h='<div class="stcards">';
+  st.forEach((s,k)=>{h+=`<div class="stc"><div class="h"><b style="color:${k<3?'var(--acc2)':'var(--acc)'}">${s.name}${s.id==='A8-1'?' ¹':s.id==='A8-2'?' ²':''}</b><span>km ${(+s.km).toFixed(1)}</span></div><div class="co">${s.full}${s.sup===false?' · ⚠ no support':''}<br>cutoff <b>${s.co}</b></div>`;
+    SIMS.forEach(sm=>{const a=sm.arr[k];h+=`<div class="rr"><span class="nm"><i class="dot" style="background:${sm.r.c}"></i>${esc(sm.r.n)}</span><span style="font-family:var(--mono)">${clk(a.clock)} ${bufBadge(a.buffer)}</span></div>`});
+    h+='</div>'});
+  h+='</div><div class="note">🟢 เผื่อเวลา ≥ '+(S.set.buf*2)+' นาที · 🟡 '+S.set.buf+'–'+(S.set.buf*2)+' นาที · 🔴 น้อยกว่า '+S.set.buf+' นาที · ป้ายแดงเข้ม = เกิน cutoff. ปรับ buffer ได้ที่แถบโมเดลเพซ</div>';
+  $('#p-aid').innerHTML=h;
+}
+let splitRunner=0,splitMode='seg';
+function segRows(sm){
+  const st=stations();const pts=[{name:'START',km:0,t:0}].concat(sm.arr.map(a=>({name:a.name+(a.id==='A8-1'?'¹':a.id==='A8-2'?'²':''),km:Math.min(+a.km,TOTAL/1000),t:a.t,co:a.co,clock:a.clock,buffer:a.buffer})));
+  const rows=[];for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i];const[up,dn]=gainLoss(a.km*1000,b.km*1000);const stopIn=i>1?S.set.stop*60:0;const mv=b.t-a.t-stopIn;rows.push({from:a.name,to:b.name,km:b.km-a.km,up,dn,mv,pace:mv/(b.km-a.km),arrive:b.clock,co:b.co,buffer:b.buffer,cum:b.t})}
+  return rows;
+}
+function kmRows(sm){const rows=[];for(let k=0;k<Math.ceil(TOTAL/1000);k++){const a=k*1000,b=Math.min(TOTAL,(k+1)*1000);const ta=timeAtDist(sm.T,sm.DD,a),tb=timeAtDist(sm.T,sm.DD,b);const[up,dn]=gainLoss(a,b);rows.push({k:k+1,len:(b-a)/1000,up,dn,t:tb-ta,pace:(tb-ta)/((b-a)/1000),cum:tb,clock:sm.start+tb})}return rows}
+function renderSplit(){
+  splitRunner=Math.min(splitRunner,SIMS.length-1);const sm=SIMS[splitRunner];
+  let h=`<div class="toolbar" style="margin-bottom:10px"><select id="spR">${SIMS.map((s,i)=>`<option value="${i}" ${i===splitRunner?'selected':''}>${esc(s.r.n)}</option>`).join('')}</select><div class="seg" id="spM"><button data-m="seg" class="${splitMode==='seg'?'on':''}">ต่อช่วง Aid</button><button data-m="km" class="${splitMode==='km'?'on':''}">ต่อ กม.</button></div></div><div class="tblwrap"><table>`;
+  if(splitMode==='seg'){h+='<tr><th>ช่วง</th><th class="n">km</th><th class="n">↑m</th><th class="n">↓m</th><th class="n">เวลาวิ่ง</th><th class="n">เพซเฉลี่ย</th><th class="n">ถึง</th><th class="n">cutoff</th><th class="n">buffer</th></tr>';
+    segRows(sm).forEach(r=>{h+=`<tr><td>${r.from} → ${r.to}</td><td class="n">${r.km.toFixed(1)}</td><td class="n">+${Math.round(r.up)}</td><td class="n">-${Math.round(r.dn)}</td><td class="n">${dur(r.mv)}</td><td class="n">${pace(r.pace)}</td><td class="n">${clk(r.arrive)}</td><td class="n">${r.co}</td><td class="n">${bufBadge(r.buffer)}</td></tr>`});
+    h+=`</table></div><p class="hint">เวลาวิ่งไม่รวมเวลาแวะ aid (${S.set.stop} นาที/จุด) · ↑↓ จาก GPX ที่ smooth แล้ว อาจต่างจากตารางผู้จัดเล็กน้อย</p>`;}
+  else{const mx=Math.max(...kmRows(sm).map(r=>r.pace));h+='<tr><th>km</th><th class="n">↑m</th><th class="n">↓m</th><th class="n">เวลา</th><th>เพซ</th><th class="n">สะสม</th><th class="n">นาฬิกา</th></tr>';
+    kmRows(sm).forEach(r=>{h+=`<tr><td class="n" style="text-align:left">${r.k}${r.len<.99?' ('+r.len.toFixed(2)+')':''}</td><td class="n">+${Math.round(r.up)}</td><td class="n">-${Math.round(r.dn)}</td><td class="n">${durms(r.t)}</td><td><div style="display:flex;align-items:center;gap:8px"><span style="font-family:var(--mono);width:44px">${pace(r.pace)}</span><span style="height:6px;border-radius:3px;background:${sm.r.c};width:${Math.round(r.pace/mx*120)}px;opacity:.8"></span></div></td><td class="n">${dur(r.cum)}</td><td class="n">${clk(r.clock)}</td></tr>`});h+='</table></div>'}
+  $('#p-split').innerHTML=h;
+  $('#spR').onchange=e=>{splitRunner=+e.target.value;renderSplit()};
+  $$('#spM button').forEach(b=>b.onclick=()=>{splitMode=b.dataset.m;renderSplit()});
+}
+function gels(sm){const iv=S.set.gel*60,out=[];for(let t=iv;t<sm.finish-5*60;t+=iv){const d=distAtTime(sm,t);let seg='';const st=stations();let prev='START';for(const s of st){if(d<=s.km*1000){seg=prev+'→'+s.name;break}prev=s.name}out.push({t,clock:sm.start+t,km:d/1000,seg})}return out}
+function renderGel(){
+  const st=stations();const maxT=Math.max(...SIMS.map(s=>s.finish));
+  let h=`<p class="hint" style="margin-top:0">เจล 1 ซองทุก ${S.set.gel} นาที นับจากปล่อยตัว · <b>กินเจลกับน้ำเปล่า</b> (ไม่ใช่ Pocari) · เติมขวด/Pocari/ผลไม้ที่จุด A8 และ W2 · ใช้แต่ยี่ห้อที่เคยซ้อม · พกสำรอง +2</p>`;
+  SIMS.forEach(sm=>{const gs=gels(sm);h+=`<div class="gelrow"><div class="gelname"><i class="dot" style="background:${sm.r.c}"></i><b>${esc(sm.r.n)}</b></div><div class="geltrack" style="--w:${sm.finish/maxT*100}%">`;
+    h+=`<div style="position:absolute;left:0;top:0;bottom:0;width:${sm.finish/maxT*100}%;background:linear-gradient(90deg,${sm.r.c}22,${sm.r.c}08);border-radius:12px"></div>`;
+    sm.arr.slice(0,3).forEach(a=>{h+=`<div class="stmark" style="left:${a.t/maxT*100}%">${a.name}</div>`});
+    gs.forEach((g,i)=>{h+=`<div class="gel" title="${clk(g.clock)} · km ${g.km.toFixed(1)}" style="left:${g.t/maxT*100}%;background:${sm.r.c};color:#0b1210">${i+1}</div>`});
+    h+=`</div></div>`});
+  h+='<div class="tblwrap"><table><tr><th>นักวิ่ง</th><th class="n">#</th><th class="n">เวลา</th><th class="n">นาฬิกา</th><th class="n">km</th><th>ช่วง</th></tr>';
+  SIMS.forEach(sm=>{const gs=gels(sm);gs.forEach((g,i)=>{h+=`<tr><td>${i===0?`<i class="dot" style="background:${sm.r.c}"></i> ${esc(sm.r.n)} <span style="color:var(--dim)">(${gs.length}+2 ซอง)</span>`:''}</td><td class="n">${i+1}</td><td class="n">+${dur(g.t)}</td><td class="n">${clk(g.clock)}</td><td class="n">${g.km.toFixed(1)}</td><td>${g.seg}</td></tr>`})});
+  h+='</table></div>';$('#p-gel').innerHTML=h;
+}
+function renderGroup(){
+  const st=stations();let h='<p class="hint" style="margin-top:0">เวลาถึงแต่ละจุดของทุกคน (นาฬิกาจริง รวม wave) และระยะห่างจากคนแรก — ใช้นัดจุดรอ/รวมกลุ่ม</p><div class="tblwrap"><table><tr><th>จุด</th>'+SIMS.map(s=>`<th class="n"><i class="dot" style="background:${s.r.c}"></i> ${esc(s.r.n)}</th>`).join('')+'<th class="n">ห่างสุด</th></tr>';
+  st.forEach((s,k)=>{const cl=SIMS.map(sm=>sm.arr[k].clock);const mn=Math.min(...cl),mx=Math.max(...cl);h+=`<tr><td><b>${s.name}${s.id==='A8-1'?'¹':s.id==='A8-2'?'²':''}</b> <span style="color:var(--dim)">${(+s.km).toFixed(1)}k</span></td>`+cl.map(c=>`<td class="n">${clk(c)}${c>mn?` <span style="color:var(--dim)">+${Math.round((c-mn)/60)}′</span>`:' 🥇'}</td>`).join('')+`<td class="n">${Math.round((mx-mn)/60)}′</td></tr>`});
+  h+='</table></div>';
+  // where do faster runners catch slower? (later wave catching earlier)
+  const notes=[];for(let a=0;a<SIMS.length;a++)for(let b=0;b<SIMS.length;b++){if(a===b)continue;const A=SIMS[a],B=SIMS[b];if(A.start<=B.start)continue;
+    // A started later; find first dist where A arrives earlier than B
+    for(let dm=100;dm<=TOTAL;dm+=100){if(A.start+timeAtDist(A.T,A.DD,dm)<=B.start+timeAtDist(B.T,B.DD,dm)){notes.push(`<i class="dot" style="background:${A.r.c}"></i> ${esc(A.r.n)} ไล่ทัน ${esc(B.r.n)} ประมาณ km ${(dm/1000).toFixed(1)} (${clk(A.start+timeAtDist(A.T,A.DD,dm))})`);break}}}
+  if(notes.length)h+='<div class="note" style="margin-top:12px">🏃 '+notes.join('<br>🏃 ')+'</div>';
+  $('#p-group').innerHTML=h;
+}
+$$('#tabs button').forEach(b=>b.onclick=()=>{$$('#tabs button').forEach(x=>x.classList.toggle('on',x===b));$$('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+b.dataset.t))});
+
+/* ---------- export / share ---------- */
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2200)}
+function shareURL(){const a=$('#apiUrl').value.trim();return location.origin+location.pathname+'#p='+b64e(S)+(a&&a!==window.DEFAULT_API?'&api='+encodeURIComponent(a):'')}
+$('#shareBtn').onclick=async()=>{const u=shareURL();history.replaceState(null,'',u);try{if(navigator.share&&/Mobi/.test(navigator.userAgent)){await navigator.share({title:'PST30 plan',url:u});return}await navigator.clipboard.writeText(u);toast('คัดลอกลิงก์แล้ว ส่งให้เพื่อนได้เลย ✨')}catch(e){prompt('คัดลอกลิงก์นี้',u)}};
+$('#saveBtn').onclick=()=>{localStorage.setItem('pst30plan',JSON.stringify(S));toast('บันทึกในเครื่องแล้ว 💾')};
+$('#printBtn').onclick=()=>{$$('.pane').forEach(p=>p.classList.add('on'));window.print();setTimeout(()=>{$$('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+$('#tabs .on').dataset.t))},500)};
+$('#csvBtn').onclick=()=>{
+  const L=[['runner','wave','segment','km','gain_m','loss_m','moving_time','avg_pace_per_km','arrive','cutoff','buffer_min']];
+  SIMS.forEach(sm=>segRows(sm).forEach(r=>L.push([sm.r.n,sm.r.w,r.from+'->'+r.to,r.km.toFixed(2),Math.round(r.up),Math.round(r.dn),durms(r.mv),pace(r.pace),clk(r.arrive),r.co,Math.round(r.buffer/60)])));
+  L.push([]);L.push(['runner','gel_no','elapsed','clock','km']);SIMS.forEach(sm=>gels(sm).forEach((g,i)=>L.push([sm.r.n,i+1,dur(g.t),clk(g.clock),g.km.toFixed(1)])));
+  const csv='\ufeff'+L.map(r=>r.map(v=>/[",\n]/.test(String(v))?'"'+String(v).replace(/"/g,'""')+'"':v).join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='pst30-plan.csv';a.click();
+};
+
+/* ---------- profile canvas ---------- */
+const pc=$('#pc'),ctx=pc.getContext('2d');let PW=0,PH=0,DPR=1;const PAD={l:40,r:12,t:16,b:24};
+let hoverD=null;
+function sizeProfile(){const r=$('#prof').getBoundingClientRect();DPR=Math.min(2,window.devicePixelRatio||1);PW=r.width;PH=r.height;pc.width=PW*DPR;pc.height=PH*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);drawProfile()}
+const px=d=>PAD.l+d/TOTAL*(PW-PAD.l-PAD.r);
+const py=e=>PAD.t+(1-(e-(minEle-30))/((maxEle+40)-(minEle-30)))*(PH-PAD.t-PAD.b);
+let profReveal=0;
+function drawProfile(){
+  if(!PW)return;ctx.clearRect(0,0,PW,PH);
+  const lo=minEle-30,hi=maxEle+40;
+  // grid
+  ctx.font='10px IBM Plex Mono';ctx.fillStyle='#5f7a6d';ctx.strokeStyle='#ffffff10';ctx.lineWidth=1;
+  for(let e=Math.ceil(lo/100)*100;e<=hi;e+=100){const y=py(e);ctx.beginPath();ctx.moveTo(PAD.l,y);ctx.lineTo(PW-PAD.r,y);ctx.stroke();ctx.fillText(e,4,y+3)}
+  const stepKm=PW<500?5:2;for(let k=0;k<=32;k+=stepKm){const x=px(k*1000);ctx.fillText(k+'k',x-6,PH-6)}
+  // filled grade bars
+  const lim=profReveal*TOTAL;const cols=Math.floor(PW-PAD.l-PAD.r);
+  for(let c=0;c<cols;c++){const d=c/cols*TOTAL;if(d>lim)break;const i=Math.min(N-1,Math.round(d/STEP));const x=PAD.l+c;const y=py(E[i]);
+    ctx.fillStyle=gcol(G[i]);ctx.globalAlpha=.55;ctx.fillRect(x,y,1.2,PH-PAD.b-y);ctx.globalAlpha=1}
+  ctx.beginPath();for(let i=0;i<N;i++){if(D[i]>lim)break;const x=px(D[i]),y=py(E[i]);i?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.strokeStyle='#e8efe9';ctx.lineWidth=1.6;ctx.stroke();
+  // stations
+  stations().forEach((s,k)=>{const x=px(Math.min(TOTAL,s.km*1000));ctx.setLineDash([3,4]);ctx.strokeStyle=k<3?'#ffb547aa':'#c6f36baa';ctx.beginPath();ctx.moveTo(x,PAD.t);ctx.lineTo(x,PH-PAD.b);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=k<3?'#ffb547':'#c6f36b';ctx.font='600 11px IBM Plex Sans Thai';const lbl=s.name+(s.id==='A8-1'?'¹':s.id==='A8-2'?'²':'');ctx.fillText(lbl,Math.min(x+3,PW-PAD.r-40),PAD.t+2)});
+  // runners
+  SIMS.forEach(sm=>{const d=sm._d;if(d==null)return;const p=ptAt(d);const x=px(d),y=py(p[2]);ctx.beginPath();ctx.arc(x,y,6,0,7);ctx.fillStyle=sm.r.c;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='#fff';ctx.stroke()});
+  if(LIVE&&LIVE.ests)LIVE.ests.forEach(e=>{const d=(e.km||0)*1000;const p=ptAt(d);const x=px(d),y=py(p[2]);ctx.save();ctx.translate(x,y);ctx.rotate(Math.PI/4);ctx.fillStyle=e.color;ctx.fillRect(-6,-6,12,12);ctx.strokeStyle='#ff4d4d';ctx.lineWidth=2;ctx.strokeRect(-6,-6,12,12);ctx.restore()});
+  if(flyD!=null){const p=ptAt(flyD);ctx.beginPath();ctx.arc(px(flyD),py(p[2]),5,0,7);ctx.fillStyle='#fff';ctx.fill()}
+  if(hoverD!=null){const x=px(hoverD);ctx.strokeStyle='#ffffff88';ctx.beginPath();ctx.moveTo(x,PAD.t);ctx.lineTo(x,PH-PAD.b);ctx.stroke();const p=ptAt(hoverD);ctx.beginPath();ctx.arc(x,py(p[2]),4,0,7);ctx.fillStyle='#fff';ctx.fill()}
+}
+function profEvent(ev){const r=pc.getBoundingClientRect();const cx=(ev.touches?ev.touches[0].clientX:ev.clientX)-r.left;const d=Math.max(0,Math.min(TOTAL,(cx-PAD.l)/(PW-PAD.l-PAD.r)*TOTAL));return {d,cx}}
+function showTip(d,cx){hoverD=d;const p=ptAt(d);const tip=$('#tip');
+  tip.innerHTML=`<div class="row"><span class="k">km ${(d/1000).toFixed(2)}</span><span>${Math.round(p[2])} m · <b style="color:${gcol(p[3])}">${(p[3]*100).toFixed(0)}%</b></span></div>`+SIMS.map(sm=>`<div class="row"><span><i class="dot" style="background:${sm.r.c}"></i>${esc(sm.r.n)}</span><span style="font-family:var(--mono)">${clk(sm.start+timeAtDist(sm.T,sm.DD,d))}</span></div>`).join('');
+  tip.style.left=Math.max(90,Math.min(PW-90,cx))+'px';tip.style.top=(py(p[2])-8)+'px';tip.style.opacity=1;setHover(d);drawProfile()}
+pc.addEventListener('mousemove',e=>{const{d,cx}=profEvent(e);showTip(d,cx)});
+pc.addEventListener('touchmove',e=>{const{d,cx}=profEvent(e);showTip(d,cx);e.preventDefault()},{passive:false});
+pc.addEventListener('touchstart',e=>{const{d,cx}=profEvent(e);showTip(d,cx)},{passive:true});
+pc.addEventListener('mouseleave',()=>{hoverD=null;$('#tip').style.opacity=0;setHover(null);drawProfile()});
+pc.addEventListener('click',e=>{const{d}=profEvent(e);if(map&&mapOK){const p=ptAt(d);setCam('free');map.flyTo({center:[p[0],p[1]],zoom:15,pitch:65,bearing:bearing(ptAt(d-150),ptAt(d+150)),duration:1600})}});
+new ResizeObserver(sizeProfile).observe($('#prof'));
+
+/* ---------- map ---------- */
+let map=null,mapOK=false,hoverMk=null,flyMk=null,runnerMks=[],stMks=[];
+const bounds=(()=>{let a=[999,999,-999,-999];for(let i=0;i<N;i++){a[0]=Math.min(a[0],R.lon[i]);a[1]=Math.min(a[1],R.lat[i]);a[2]=Math.max(a[2],R.lon[i]);a[3]=Math.max(a[3],R.lat[i])}return a})();
+function gradientExpr(){const bins=220;const ex=['interpolate',['linear'],['line-progress']];for(let b=0;b<=bins;b++){const d=b/bins*TOTAL;const i=Math.min(N-1,Math.round(d/STEP));ex.push(b/bins,gcol(G[i]))}return ex}
+function initMap(){
+  if(!window.maplibregl){$('#nogl').style.display='flex';return}
+  try{
+  map=new maplibregl.Map({container:'map',attributionControl:{compact:true},maxPitch:80,
+    style:{version:8,glyphs:'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+      sources:{
+        sat:{type:'raster',tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,maxzoom:18,attribution:'Imagery © Esri, Maxar, Earthstar Geographics'},
+        topo:{type:'raster',tiles:['https://a.tile.opentopomap.org/{z}/{x}/{y}.png','https://b.tile.opentopomap.org/{z}/{x}/{y}.png','https://c.tile.opentopomap.org/{z}/{x}/{y}.png'],tileSize:256,maxzoom:17,attribution:'© OpenStreetMap contributors, SRTM · © OpenTopoMap (CC-BY-SA)'},
+        dem:{type:'raster-dem',tiles:['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],encoding:'terrarium',tileSize:256,maxzoom:14,attribution:'Terrain: Mapzen/AWS Terrain Tiles'},
+        hs:{type:'raster-dem',tiles:['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],encoding:'terrarium',tileSize:256,maxzoom:14},
+        route:{type:'geojson',lineMetrics:true,data:{type:'Feature',geometry:{type:'LineString',coordinates:R.lon.map((x,i)=>[x,R.lat[i]])}}},
+        done:{type:'geojson',data:{type:'FeatureCollection',features:[]}}
+      },
+      layers:[
+        {id:'bg',type:'background',paint:{'background-color':'#0b1210'}},
+        {id:'sat',type:'raster',source:'sat',paint:{'raster-saturation':-.25,'raster-brightness-max':.85,'raster-contrast':.1}},
+        {id:'topo',type:'raster',source:'topo',layout:{visibility:'none'},paint:{'raster-brightness-max':.92}},
+        {id:'hs',type:'hillshade',source:'hs',paint:{'hillshade-shadow-color':'#000','hillshade-exaggeration':.35,'hillshade-highlight-color':'#ffffff22'}},
+        {id:'route-glow',type:'line',source:'route',layout:{'line-join':'round','line-cap':'round'},paint:{'line-color':'#000','line-width':10,'line-opacity':.45,'line-blur':4}},
+        {id:'route',type:'line',source:'route',layout:{'line-join':'round','line-cap':'round'},paint:{'line-width':['interpolate',['linear'],['zoom'],11,3,15,6],'line-gradient':gradientExpr()}},
+        {id:'done',type:'line',source:'done',layout:{'line-join':'round','line-cap':'round'},paint:{'line-color':['get','c'],'line-width':2.5,'line-opacity':.9,'line-offset':['get','o']}}
+      ],
+      sky:{'sky-color':'#0f1d18','horizon-color':'#2a3b2f','fog-color':'#0b1210','sky-horizon-blend':.6,'horizon-fog-blend':.6,'fog-ground-blend':.3}},
+    bounds:[[bounds[0],bounds[1]],[bounds[2],bounds[3]]],fitBoundsOptions:{padding:40},pitch:0});
+  map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
+  map.addControl(new maplibregl.FullscreenControl(),'top-right');
+  map.on('load',()=>{
+    mapOK=true;
+    map.setTerrain({source:'dem',exaggeration:1.6});
+    // stations markers
+    buildStationMarkers();buildRunnerMarkers();
+    const h=document.createElement('div');h.className='hm';hoverMk=new maplibregl.Marker({element:h});
+    const f=document.createElement('div');f.className='fly';flyMk=new maplibregl.Marker({element:f});
+    setTimeout(()=>overview(2600),300);
+    window.__mapReady=true;
+  });
+  map.on('error',e=>console.warn('map',e&&e.error&&e.error.message));
+  map.on('dragstart',()=>{if(cam!=='overview'&&cam!=='free')return;});
+  }catch(e){console.error(e);$('#nogl').style.display='flex'}
+}
+function overview(d=1800){if(!mapOK)return;const cam0=map.cameraForBounds([[bounds[0],bounds[1]],[bounds[2],bounds[3]]],{padding:{top:60,bottom:70,left:30,right:30}});map.flyTo({center:cam0.center,zoom:cam0.zoom+.35,pitch:58,bearing:-28,duration:d,essential:true})}
+function buildStationMarkers(){stMks.forEach(m=>m.remove());stMks=[];if(!mapOK)return;
+  const st=stations();
+  const sf=document.createElement('div');sf.className='sm-st sf';sf.innerHTML='<b>START/FINISH</b>CMECC';stMks.push(new maplibregl.Marker({element:sf,anchor:'bottom',offset:[0,-6]}).setLngLat([R.lon[0],R.lat[0]]).addTo(map));
+  // A8 is passed twice: one marker with both
+  const groups={};st.slice(0,3).forEach(s=>{const p=ptAt(s.km*1000);const key=s.name;(groups[key]=groups[key]||{p,list:[]}).list.push(s)});
+  Object.entries(groups).forEach(([k,g])=>{const el=document.createElement('div');el.className='sm-st';el.innerHTML=`<b>${k}</b>${g.list.map(s=>(+s.km).toFixed(1)+'k ⏱'+s.co).join(' · ')}`;el.onclick=()=>{setCam('free');map.flyTo({center:[g.p[0],g.p[1]],zoom:15.5,pitch:60,duration:1500})};
+    stMks.push(new maplibregl.Marker({element:el,anchor:'bottom',offset:[0,-6]}).setLngLat([g.p[0],g.p[1]]).addTo(map))});
+}
+function buildRunnerMarkers(){runnerMks.forEach(m=>m.remove());runnerMks=[];if(!mapOK)return;
+  SIMS.forEach(sm=>{const el=document.createElement('div');el.className='rm';el.style.setProperty('--c',sm.r.c);el.textContent=initial(sm.r.n);el.title=sm.r.n;
+    const m=new maplibregl.Marker({element:el}).setLngLat([R.lon[0],R.lat[0]]).addTo(map);runnerMks.push(m)})}
+function setHover(d){if(!mapOK||!hoverMk)return;if(d==null){hoverMk.remove();return}const p=ptAt(d);hoverMk.setLngLat([p[0],p[1]]).addTo(map)}
+$$('#baseSeg button').forEach(b=>b.onclick=()=>{$$('#baseSeg button').forEach(x=>x.classList.toggle('on',x===b));if(!mapOK)return;map.setLayoutProperty('sat','visibility',b.dataset.b==='sat'?'visible':'none');map.setLayoutProperty('topo','visibility',b.dataset.b==='topo'?'visible':'none')});
+
+/* ---------- simulation playback ---------- */
+let simT=hm2s('07:00'),playing=false,lastTs=0,cam='overview',flyD=null,camBear=null;
+function simRange(){const s=Math.min(...SIMS.map(x=>x.start));const e=Math.max(...SIMS.map(x=>x.start+x.finish),hm2s(S.fin));return [s,e]}
+function setSim(t){const[a,b]=simRange();simT=Math.max(a,Math.min(b,t));const sc=$('#scrub');sc.value=Math.round((simT-a)/(b-a)*1000);setP(sc);$('#hudT').textContent=clks(simT).slice(0,5);
+  const led=SIMS.map(sm=>({sm,d:sm._d=distAtTime(sm,simT-sm.start)}));
+  const ahead=led.slice().sort((x,y)=>y.d-x.d)[0];
+  $('#hudS').innerHTML=`${clks(simT)} · นำ: <b style="color:${ahead.sm.r.c}">${esc(ahead.sm.r.n)}</b> km ${(ahead.d/1000).toFixed(1)}`;
+  if(mapOK){led.forEach((x,i)=>{const p=ptAt(x.d);runnerMks[i]&&runnerMks[i].setLngLat([p[0],p[1]])});
+    // trails
+    const src=map.getSource('done');if(src)src.setData({type:'FeatureCollection',features:led.filter(x=>x.d>30).map((x,i)=>{const n=Math.min(N-1,Math.ceil(x.d/STEP));const c=R.lon.slice(0,n).map((lo,k)=>[lo,R.lat[k]]);const p=ptAt(x.d);c.push([p[0],p[1]]);return{type:'Feature',properties:{c:x.sm.r.c,o:(i-(led.length-1)/2)*2.5},geometry:{type:'LineString',coordinates:c.length>1?c:[c[0],c[0]]}}})});
+    if(cam==='follow'&&playing){const fi=+$('#followSel').value||0;const x=led[fi]||led[0];followCam(x.d)}}
+  drawProfile();
+}
+function followCam(d,zoom=14.6,pitch=66){const p=ptAt(d);const tb=bearing(ptAt(d-250),ptAt(d+350));if(camBear==null)camBear=tb;let diff=((tb-camBear+540)%360)-180;camBear+=diff*.06;
+  map.jumpTo({center:[p[0],p[1]],bearing:camBear,pitch,zoom})}
+$('#scrub').oninput=e=>{const[a,b]=simRange();setSim(a+(b-a)*e.target.value/1000)};
+$('#playBtn').onclick=()=>togglePlay();
+function togglePlay(force){playing=force??!playing;$('#playBtn').textContent=playing?'❚❚':'▶';
+  if(playing){const[a,b]=simRange();if(simT>=b-1)setSim(a);if(cam==='fly')setCam('follow');if(cam==='follow'&&mapOK){camBear=null;}lastTs=performance.now();requestAnimationFrame(loop)}}
+function loop(ts){if(!playing)return;const dt=Math.min(.1,(ts-lastTs)/1000);lastTs=ts;const sp=+$('#speed').value;const[,b]=simRange();setSim(simT+dt*sp);if(simT>=b){togglePlay(false);toast('ทุกคนเข้าเส้นชัยแล้ว 🎉')}else requestAnimationFrame(loop)}
+function fillFollow(){const s=$('#followSel');const v=s.value;s.innerHTML=SIMS.map((sm,i)=>`<option value="${i}">🎥 ${esc(sm.r.n)}</option>`).join('');if(v&&+v<SIMS.length)s.value=v}
+$('#followSel').onchange=()=>{camBear=null;setCam('follow');if(!playing&&mapOK){const sm=SIMS[+$('#followSel').value];map.flyTo({center:ptAt(sm._d||0).slice(0,2),zoom:14.6,pitch:66,duration:1200})}};
+function setCam(c){cam=c;$$('#camSeg button').forEach(x=>x.classList.toggle('on',x.dataset.c===c));if(c!=='fly'){flyD=null;flyMk&&flyMk.remove();}}
+$$('#camSeg button').forEach(b=>b.onclick=()=>{const c=b.dataset.c;
+  if(c==='overview'){setCam('overview');overview()}
+  else if(c==='follow'){setCam('follow');camBear=null;if(mapOK){const sm=SIMS[+$('#followSel').value||0];map.flyTo({center:ptAt(sm._d||0).slice(0,2),zoom:14.6,pitch:66,bearing:bearing(ptAt((sm._d||0)-200),ptAt((sm._d||0)+300)),duration:1400})}if(!playing)togglePlay(true)}
+  else if(c==='fly'){startFly()}});
+function startFly(){if(!mapOK)return toast('แผนที่ยังโหลดไม่เสร็จ');if(playing)togglePlay(false);setCam('fly');camBear=null;flyD=0;flyMk.setLngLat([R.lon[0],R.lat[0]]).addTo(map);const dur=75;let t0=null;
+  const p0=ptAt(0);map.flyTo({center:[p0[0],p0[1]],zoom:14.8,pitch:68,bearing:bearing(ptAt(0),ptAt(400)),duration:1800});
+  setTimeout(()=>{camBear=null;requestAnimationFrame(function step(ts){if(cam!=='fly')return;if(t0==null)t0=ts;const k=(ts-t0)/1000/dur;if(k>=1){setCam('overview');overview();return}
+    const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;flyD=(k*.35+e*.65)*TOTAL;const p=ptAt(flyD);flyMk.setLngLat([p[0],p[1]]);followCam(flyD,14.8,70);
+    $('#hudT').textContent='km '+(flyD/1000).toFixed(1);$('#hudS').textContent='Flythrough · '+Math.round(p[2])+' m · '+(p[3]*100).toFixed(0)+'%';drawProfile();requestAnimationFrame(step)})},1850)}
+
+
+/* ---------- LIVE mode ---------- */
+LIVE={on:false,demo:false,timer:null,data:[],last:null,mks:[],err:null};
+const apiInp=$('#apiUrl');
+(()=>{const q=new URLSearchParams(location.search).get('api');const h=location.hash.match(/api=([^&]+)/);apiInp.value=q||(h&&decodeURIComponent(h[1]))||localStorage.getItem('pst30api')||window.DEFAULT_API||''})();
+const STKM={'A8-1':()=>S.st[0].km,'A8':null,'W2':()=>S.st[1].km,'A8-2':()=>S.st[2].km,'FINISH':()=>TOTAL/1000,'FIN':()=>TOTAL/1000,'START':()=>0};
+function parseTime(v){ // -> seconds since local midnight (Bangkok) on race day
+  if(v==null)return null;
+  if(typeof v==='number'){const ms=v<1e12?v*1000:v;return bkkSec(new Date(ms))}
+  const s=String(v).trim();if(/^\d{1,2}:\d{2}(:\d{2})?$/.test(s))return hm2s(s);
+  const d=new Date(s);return isNaN(d)?null:bkkSec(d);
+}
+function bkkSec(d){const u=d.getTime()/1000+7*3600;return ((u%86400)+86400)%86400}
+function stationKm(name,prevKm){if(name==null)return null;const n=String(name).toUpperCase().replace(/\s/g,'');
+  if(n==='A8'||n.startsWith('A8')&&!/[12]$/.test(n))return prevKm!=null&&prevKm>=S.st[0].km-0.2?S.st[2].km:S.st[0].km;
+  for(const k in STKM){if(STKM[k]&&n===k)return STKM[k]()}
+  if(n.includes('W2'))return S.st[1].km;if(n.includes('FIN'))return TOTAL/1000;if(n.includes('A8')&&n.endsWith('2'))return S.st[2].km;if(n.includes('A8'))return S.st[0].km;return null}
+function normalize(json){
+  // tolerant: {runners:[{name,goal,wave,checkins:[{station,km,time}],last_km}]} | {checkins:[{runner|name,...}]} | [..]
+  let runners=[];const src=Array.isArray(json)?json:(json.runners||json.data||[]);
+  const byName={};
+  (Array.isArray(src)?src:[]).forEach(r=>{const name=String(r.name||r.displayName||r.display_name||r.n||r.runner||'Runner');
+    const st0=r.start_time?parseTime(r.start_time):null;byName[name]={name,goal:r.goal||r.goal_time||r.target||(r.goal_min?dur(r.goal_min*60):null),wave:(st0!=null?clk(st0):null)||r.wave||r.start||null,estKm:isFinite(+r.est_km)&&r.est_km!=null?+r.est_km:null,deltaMin:isFinite(+r.delta_min)&&r.delta_min!=null?+r.delta_min:null,dnf:!!r.dnf,finished:!!r.finished,lastKm:+(r.last_km??r.lastKm??r.km??NaN),checkins:(r.checkins||r.checkIns||[]).slice()}});
+  const flat=json&&!Array.isArray(json)&&Array.isArray(json.checkins)?json.checkins:[];
+  flat.forEach(c=>{const name=String(c.name||c.runner||c.displayName||c.runner_name||c.user||'Runner');(byName[name]=byName[name]||{name,checkins:[],lastKm:NaN}).checkins.push(c)});
+  Object.values(byName).forEach(r=>{let prev=null;
+    r.cks=r.checkins.map(c=>{let km=c.km!=null&&c.km!==''?+c.km:null;if(km==null||isNaN(km))km=stationKm(c.station||c.aid||c.point||c.cp,prev);const t=parseTime(c.time??c.ts??c.at??c.timestamp??c.created_at);if(km!=null)prev=km;return {km,t,station:c.station||c.aid||c.point||'',raw:c}}).filter(c=>c.km!=null&&c.t!=null).sort((a,b)=>a.t-b.t);
+    if(!r.cks.length&&isFinite(r.lastKm)&&r.lastAt)r.cks.push({km:r.lastKm,t:parseTime(r.lastAt),station:''});
+  });
+  return Object.values(byName);
+}
+function planFor(lr){const nm=lr.name.trim().toLowerCase();let i=S.runners.findIndex(r=>r.n.trim().toLowerCase()===nm);
+  if(i<0)i=S.runners.findIndex(r=>nm.includes(r.n.trim().toLowerCase())||r.n.trim().toLowerCase().includes(nm));
+  if(i>=0)return SIMS[i];
+  const goal=lr.goal&&/^\d{1,2}:\d{2}/.test(String(lr.goal))?String(lr.goal).slice(0,5).replace(/^(\d):/,'$1:'):'6:30';
+  const w=lr.wave&&/^\d{2}:\d{2}/.test(String(lr.wave))?String(lr.wave).slice(0,5):'07:00';
+  const sim=simulate({n:lr.name,c:'#ffffff',w,m:'goal',v:goal});sim._adhoc=true;return sim}
+function nowSec(){return LIVE.demo?LIVE.demoNow:bkkSec(new Date())}
+function estimate(lr){
+  const sim=planFor(lr);const last=lr.cks[lr.cks.length-1];const now=nowSec();
+  const out={lr,sim,last,color:sim._adhoc?PALETTE[(LIVE.data.indexOf(lr)+3)%8]:sim.r.c};
+  if(lr.dnf){out.km=last?last.km:0;out.dnf=true;return out}
+  if(!last){out.km=lr.estKm||0;return out}
+  const plannedAt=sim.start+timeAtDist(sim.T,sim.DD,last.km*1000);
+  out.delta=last.t-plannedAt; // + = behind plan
+  const tp=plannedAt-sim.start, ta=last.t-sim.start; const ratio=tp>60?Math.max(.6,Math.min(1.8,ta/tp)):1;
+  out.ratio=ratio;
+  if(lr.finished||last.km>=TOTAL/1000-0.05){out.km=TOTAL/1000;out.done=true;return out}
+  if(sim._adhoc&&lr.estKm!=null){out.km=Math.max(last.km,Math.min(TOTAL/1000,lr.estKm));if(lr.deltaMin!=null)out.delta=lr.deltaMin*60;out.eta=sim.start+sim.finish*ratio;return out}
+  const estPlanElapsed=(now-sim.start)/ratio;
+  let d=distAtTime(sim,estPlanElapsed);d=Math.max(last.km*1000,Math.min(TOTAL-50,d));
+  out.km=d/1000;out.age=now-last.t;out.eta=sim.start+sim.finish*ratio;return out}
+function liveRender(){
+  const ests=LIVE.data.map(estimate);LIVE.ests=ests;
+  $('#lrows').innerHTML=ests.map(e=>{const l=e.last;const dm=e.delta!=null?Math.round(e.delta/60):null;
+    const badge=dm==null?'':dm>2?`<span class="badge b-warn">ช้ากว่าแผน ${dm}′</span>`:dm<-2?`<span class="badge b-ok">เร็วกว่าแผน ${-dm}′</span>`:`<span class="badge b-ok">ตามแผน</span>`;
+    return `<div class="lr"><div class="km">${e.done?'🏁':(e.km||0).toFixed(1)+'k'}</div><div class="nm"><i class="dot" style="background:${e.color}"></i>${esc(e.lr.name)}${e.sim._adhoc?' <span style="color:var(--dim);font-weight:400;font-size:11px">(ไม่มีในแผน)</span>':''}</div>
+    <div class="meta">${l?`เช็คอินล่าสุด <b>${esc(l.station||'')} ${l.km.toFixed(1)}k</b> เวลา <b>${clk(l.t)}</b> ${badge}<br>${e.dnf?'DNF 🙏':e.done?'เข้าเส้นชัยแล้ว 🎉':`ประมาณตอนนี้ <b>~${e.km.toFixed(1)} km</b> · คาดเข้าเส้นชัย <b>${clk(e.eta)}</b>`}`:'ยังไม่มีเช็คอิน'}</div></div>`}).join('')||'<div class="hint">ยังไม่มีข้อมูลนักวิ่ง</div>';
+  // markers
+  LIVE.mks.forEach(m=>m.remove());LIVE.mks=[];
+  if(mapOK)ests.forEach(e=>{const el=document.createElement('div');el.className='livemk';el.style.setProperty('--c',e.color);el.textContent=initial(e.lr.name);el.title=e.lr.name+' (live est.)';const p=ptAt((e.km||0)*1000);LIVE.mks.push(new maplibregl.Marker({element:el}).setLngLat([p[0],p[1]]).addTo(map))});
+  drawProfile();
+}
+function liveStatus(cls,msg){$('#ldot').className='ldot '+cls;$('#lmsg').textContent=msg}
+async function poll(){
+  if(LIVE.demo){LIVE.demoNow+=600;LIVE.data=normalize(demoData(LIVE.demoNow));LIVE.last=Date.now();liveStatus('on','DEMO · ข้อมูลจำลอง (ไม่ใช่ของจริง) · เวลาจำลอง '+clk(LIVE.demoNow));liveRender();return}
+  const base=apiInp.value.trim().replace(/\/+$/,'');if(!base){liveStatus('err','ใส่ API URL ก่อน');return}
+  try{const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),12000);
+    const res=await fetch(base+'/api/checkins',{signal:ctl.signal,headers:{accept:'application/json'}});clearTimeout(to);
+    if(!res.ok)throw new Error('HTTP '+res.status);const j=await res.json();LIVE.data=normalize(j);LIVE.last=Date.now();LIVE.err=null;
+    liveStatus('on',`LIVE · อัปเดต ${new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit',second:'2-digit'})} (เวลาไทย) · ${LIVE.data.length} คน · รีเฟรชทุก 30 วิ`);liveRender();
+  }catch(e){LIVE.err=e;liveStatus('err',`เชื่อมต่อไม่ได้ (${e.name==='AbortError'?'timeout':e.message}) — จะลองใหม่ใน 30 วิ · แผนยังใช้ได้ตามปกติ${LIVE.data.length?' · แสดงข้อมูลล่าสุดที่มี':''}`);if(LIVE.data.length)liveRender()}
+}
+function liveStart(demo){liveStop(true);LIVE.on=true;LIVE.demo=!!demo;
+  if(demo){LIVE.demoNow=hm2s('09:40')}else{try{localStorage.setItem('pst30api',apiInp.value.trim())}catch(e){}}
+  $('#liveBtn').textContent='หยุด Live';poll();LIVE.timer=setInterval(poll,demo?4000:30000);
+  if(!demo){const ns=bkkSec(new Date());const[a,b]=simRange();if(ns>=a&&ns<=b){togglePlay(false);setSim(ns)}}else{togglePlay(false);setSim(LIVE.demoNow)}}
+function liveStop(silent){clearInterval(LIVE.timer);LIVE.on=false;LIVE.mks.forEach(m=>m.remove());LIVE.mks=[];LIVE.data=[];LIVE.ests=[];$('#liveBtn').textContent='เริ่ม Live';if(!silent){$('#lrows').innerHTML='';liveStatus('','หยุด Live แล้ว')}drawProfile()}
+$('#liveBtn').onclick=()=>{if(LIVE.on&&!LIVE.demo)liveStop();else liveStart(false)};
+$('#demoBtn').onclick=()=>{if(LIVE.on&&LIVE.demo)liveStop();else liveStart(true)};
+function demoData(now){return SIMS.map((sm,i)=>{const f=[1.06,.97,1.12,1.0,1.08][i%5];const cks=[{station:'START',km:0,time:clk(sm.start)}];
+  sm.arr.forEach((a,k)=>{const t=sm.start+a.t*f;if(t<=now)cks.push({station:a.name,km:+(+a.km).toFixed(2),time:clks(t)})});return {name:sm.r.n,checkins:cks}})}
+window.__live=LIVE;
+/* ---------- update all ---------- */
+function update(re=true,rebuild=false){
+  recompute();
+  if(rebuild){renderRunners();fillFollow();buildRunnerMarkers();buildStationMarkers();initControlsStations()}
+  else updateRunnerRes();
+  renderAid();renderSplit();renderGel();renderGroup();setSim(simT);if(LIVE&&LIVE.on&&LIVE.data.length)liveRender();
+  try{localStorage.setItem('pst30plan',JSON.stringify(S))}catch(e){}
+  history.replaceState(null,'','#p='+b64e(S));
+}
+function initControlsStations(){}
+function updateRunnerRes(){$$('#runners .runner').forEach((el,i)=>{const sm=SIMS[i];if(!sm)return;el.style.setProperty('--c',sm.r.c);el.querySelector('.res').innerHTML=`<span>เข้าเส้นชัย <b>${clk(sm.start+sm.finish)}</b></span><span>เวลา <b>${dur(sm.finish)}</b></span><span>flat <b>${pace(sm.flat*1000)}/km</b></span><span>avg <b>${pace(sm.finish/(TOTAL/1000))}/km</b></span>`;
+  if(window.Motion)Motion.animate(el.querySelector('.res'),{opacity:[.3,1]},{duration:.35})})}
+
+/* ---------- boot ---------- */
+recompute();initControls();renderRunners();fillFollow();renderAid();renderSplit();renderGel();renderGroup();
+initMap();sizeProfile();setSim(Math.min(...SIMS.map(x=>x.start)));
+// intro animations
+(function intro(){const els=$$('.reveal');if(window.Motion){Motion.animate(els,{opacity:[0,1],transform:['translateY(14px)','none']},{delay:Motion.stagger(.08),duration:.6,easing:[.2,.8,.2,1]})}else document.body.classList.add('noanim');
+  const t0=performance.now();(function grow(ts){profReveal=Math.min(1,(ts-t0)/1400);profReveal=1-Math.pow(1-profReveal,3);drawProfile();if(profReveal<1)requestAnimationFrame(grow)})(t0)})();
+window.__planner={S,SIMS:()=>SIMS,setSim};
+})();
+</script>
+</body>
+</html>
